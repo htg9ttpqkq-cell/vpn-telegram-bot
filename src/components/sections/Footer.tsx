@@ -45,7 +45,7 @@ export default function Footer() {
         </div>
 
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[8px] uppercase tracking-[0.2em] text-muted-foreground font-bold">
-          <p>© 2024 EDELIA | VPN. ALL RIGHTS RESERVED.</p>
+          <p>© 2026 EDELIA | VPN. ALL RIGHTS RESERVED.</p>
           <div className="flex gap-6">
             <Link href="#" className="hover:text-white transition-colors">STATUS</Link>
             <Link href="#" className="hover:text-white transition-colors">NETWORK</Link>
