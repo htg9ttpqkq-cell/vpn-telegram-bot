@@ -1,7 +1,5 @@
-
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/sections/Hero";
-import Stats from "@/components/sections/Stats";
 import Features from "@/components/sections/Features";
 import HowItWorks from "@/components/sections/HowItWorks";
 import DashboardPreview from "@/components/sections/DashboardPreview";
@@ -16,9 +14,6 @@ export default function Home() {
       <main className="flex-grow">
         <div id="hero">
           <Hero />
-        </div>
-        <div id="stats">
-          <Stats />
         </div>
         <div id="features">
           <Features />
