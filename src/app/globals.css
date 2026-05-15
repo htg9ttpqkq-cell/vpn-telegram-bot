@@ -23,7 +23,7 @@
     --border: 0 0% 15%;
     --input: 0 0% 15%;
     --ring: 0 0% 100%;
-    --radius: 0.1rem;
+    --radius: 0rem;
 
     /* Sidebar Variables */
     --sidebar-background: 0 0% 2%;
@@ -42,36 +42,23 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground overflow-x-hidden;
+    @apply bg-black text-white overflow-x-hidden;
   }
 }
 
 .bg-grid {
-  background-size: 50px 50px;
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
 }
 
 .stencil-text {
   font-family: 'Stardos Stencil', cursive;
-  text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 
-.glass-card {
-  @apply bg-white/[0.02] backdrop-blur-md border border-white/[0.05];
-}
-
-.text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50;
-}
-
-.primary-gradient {
-  @apply bg-white text-black hover:bg-white/90;
-}
-
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -79,5 +66,5 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-white/20 rounded-full hover:bg-white/40 transition-colors;
+  @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
 }
