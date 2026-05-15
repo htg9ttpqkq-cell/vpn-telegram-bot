@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -28,15 +27,15 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
-          <Link href="#features" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Features</Link>
-          <Link href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">How it Works</Link>
-          <Link href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Pricing</Link>
+          <Link href="#features" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Преимущества</Link>
+          <Link href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Как это работает</Link>
+          <Link href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Цены</Link>
           <Link href="#telegram" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Telegram</Link>
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" className="hidden sm:inline-flex text-sm font-bold text-muted-foreground hover:text-white">Sign In</Button>
-          <Button className="rounded-full primary-gradient border-none px-6 font-bold shadow-lg shadow-primary/20">Get Edelia</Button>
+          <Button variant="ghost" className="hidden sm:inline-flex text-sm font-bold text-muted-foreground hover:text-white">Войти</Button>
+          <Button className="rounded-full primary-gradient border-none px-6 font-bold shadow-lg shadow-primary/20">Подключить Edelia</Button>
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="w-6 h-6" />
           </Button>

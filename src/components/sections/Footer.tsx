@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -17,26 +16,26 @@ export default function Footer() {
               <span className="text-2xl font-headline font-bold tracking-tight">Edelia <span className="text-primary">VPN</span></span>
             </Link>
             <p className="text-muted-foreground max-w-sm leading-relaxed">
-              Premium VPN service built for the modern internet. Secure, borderless, and lightning fast. Experience true digital freedom.
+              Премиальный VPN-сервис для современного интернета. Безопасный, без границ и молниеносно быстрый. Почувствуйте истинную цифровую свободу.
             </p>
           </div>
 
           <div>
-            <h4 className="font-bold mb-6 uppercase text-xs tracking-widest text-primary">Resources</h4>
+            <h4 className="font-bold mb-6 uppercase text-xs tracking-widest text-primary">Ресурсы</h4>
             <ul className="space-y-4">
-              <li><Link href="/privacy" className="text-muted-foreground hover:text-white transition-colors text-sm">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="text-muted-foreground hover:text-white transition-colors text-sm">Terms of Service</Link></li>
-              <li><Link href="/docs" className="text-muted-foreground hover:text-white transition-colors text-sm">Documentation</Link></li>
+              <li><Link href="/privacy" className="text-muted-foreground hover:text-white transition-colors text-sm">Приватность</Link></li>
+              <li><Link href="/terms" className="text-muted-foreground hover:text-white transition-colors text-sm">Условия</Link></li>
+              <li><Link href="/docs" className="text-muted-foreground hover:text-white transition-colors text-sm">Документация</Link></li>
               <li><Link href="/faq" className="text-muted-foreground hover:text-white transition-colors text-sm">FAQ</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold mb-6 uppercase text-xs tracking-widest text-primary">Community</h4>
+            <h4 className="font-bold mb-6 uppercase text-xs tracking-widest text-primary">Сообщество</h4>
             <div className="flex gap-4">
-              <Link href="#" className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center hover:bg-primary/20 transition-all">
+              <a href="https://t.me/edelia_vpn_bot" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center hover:bg-primary/20 transition-all">
                 <Send className="w-5 h-5" />
-              </Link>
+              </a>
               <Link href="#" className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center hover:bg-primary/20 transition-all">
                 <Twitter className="w-5 h-5" />
               </Link>
@@ -48,11 +47,11 @@ export default function Footer() {
         </div>
 
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
-          <p>© 2024 Edelia VPN (edelia.ru). All rights reserved.</p>
+          <p>© 2024 Edelia VPN. Все права защищены.</p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-white transition-colors">Status</Link>
-            <Link href="#" className="hover:text-white transition-colors">Network Map</Link>
-            <Link href="#" className="hover:text-white transition-colors">Support</Link>
+            <Link href="#" className="hover:text-white transition-colors">Статус</Link>
+            <Link href="#" className="hover:text-white transition-colors">Карта сети</Link>
+            <Link href="#" className="hover:text-white transition-colors">Поддержка</Link>
           </div>
         </div>
       </div>

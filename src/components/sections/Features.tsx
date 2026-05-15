@@ -1,4 +1,3 @@
-
 "use client";
 
 import { motion } from "framer-motion";
@@ -6,40 +5,40 @@ import { ShieldCheck, Rocket, Lock, Terminal, Radio, Smartphone } from "lucide-r
 
 const features = [
   {
-    title: "VLESS Reality Tech",
-    description: "Next-gen stealth protocol that makes your traffic indistinguishable from normal web browsing.",
+    title: "Технология VLESS Reality",
+    description: "Протокол нового поколения, который делает ваш трафик неотличимым от обычного просмотра веб-страниц.",
     icon: ShieldCheck,
   },
   {
-    title: "Ultra Speed Streaming",
-    description: "Optimized server nodes for 4K streaming without buffering or ISP throttling.",
+    title: "Ультраскорость",
+    description: "Оптимизированные серверы для стриминга в 4K без буферизации и ограничений провайдера.",
     icon: Rocket,
   },
   {
-    title: "Military Encryption",
-    description: "Your data is protected by industry-standard AES-256-GCM encryption at all times.",
+    title: "Военное шифрование",
+    description: "Ваши данные защищены отраслевым стандартом AES-256-GCM в любое время.",
     icon: Lock,
   },
   {
-    title: "Telegram Control",
-    description: "Manage your connection, subscription, and servers directly through our advanced bot.",
+    title: "Управление в Telegram",
+    description: "Управляйте подпиской и серверами напрямую через нашего продвинутого бота.",
     icon: Terminal,
   },
   {
-    title: "Public Wi-Fi Shield",
-    description: "Automatic protection whenever you connect to an unsecured public network.",
+    title: "Защита в Public Wi-Fi",
+    description: "Автоматическая защита при подключении к незащищенным общественным сетям.",
     icon: Radio,
   },
   {
-    title: "Multi-Device Sync",
-    description: "Connect all your devices with a single account. Native apps for iOS, Android, and Windows.",
+    title: "Синхронизация устройств",
+    description: "Подключайте все свои устройства с одного аккаунта. Приложения для iOS, Android и Windows.",
     icon: Smartphone,
   },
 ];
 
 export default function Features() {
   return (
-    <section className="py-24 relative">
+    <section className="py-24 relative" id="features">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%] bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
       
       <div className="container mx-auto px-6">
@@ -50,10 +49,10 @@ export default function Features() {
             viewport={{ once: true }}
             className="text-4xl md:text-5xl font-headline font-bold mb-4"
           >
-            Premium Security <span className="text-primary">Standards</span>
+            Премиальные стандарты <span className="text-primary">безопасности</span>
           </motion.h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Experience advanced tunneling technology designed for the modern web. Privacy is not a privilege, it's a right.
+            Испытайте передовые технологии туннелирования. Приватность — это не привилегия, а право.
           </p>
         </div>
 

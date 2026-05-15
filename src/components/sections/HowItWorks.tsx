@@ -1,4 +1,3 @@
-
 "use client";
 
 import { motion } from "framer-motion";
@@ -6,29 +5,29 @@ import { CreditCard, Key, CheckCircle } from "lucide-react";
 
 const steps = [
   {
-    title: "Choose your Plan",
-    description: "Select the subscription that fits your needs perfectly.",
+    title: "Выберите тариф",
+    description: "Подберите подписку, которая идеально подходит вам.",
     icon: CreditCard,
   },
   {
-    title: "Receive Access",
-    description: "Get instant credentials via email and Telegram.",
+    title: "Получите доступ",
+    description: "Мгновенные данные для входа придут в Telegram.",
     icon: Key,
   },
   {
-    title: "Connect instantly",
-    description: "One-click connection and you're fully protected.",
+    title: "Подключитесь",
+    description: "Подключение в один клик и вы под полной защитой.",
     icon: CheckCircle,
   },
 ];
 
 export default function HowItWorks() {
   return (
-    <section className="py-24 bg-background/50">
+    <section className="py-24 bg-background/50" id="how-it-works">
       <div className="container mx-auto px-6">
         <div className="text-center mb-20">
-          <h2 className="text-4xl font-headline font-bold mb-4">Start in 60 Seconds</h2>
-          <p className="text-muted-foreground">Minimal friction, maximum security.</p>
+          <h2 className="text-4xl font-headline font-bold mb-4">Старт за 60 секунд</h2>
+          <p className="text-muted-foreground">Минимум усилий — максимум безопасности.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">

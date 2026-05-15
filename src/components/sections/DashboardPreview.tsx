@@ -33,19 +33,19 @@ export default function DashboardPreview() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Badge className="bg-primary/20 text-primary border-primary/30 mb-6">LIVE STATUS</Badge>
+              <Badge className="bg-primary/20 text-primary border-primary/30 mb-6">СТАТУС LIVE</Badge>
               <h2 className="text-4xl md:text-5xl font-headline font-bold mb-6">
-                Total Control at <span className="text-gradient">Your Fingertips</span>
+                Полный контроль на <span className="text-gradient">ваших условиях</span>
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
-                Our dashboard provides real-time insights into your connection. Monitor speed, manage servers, and verify your encrypted tunnel health with ease.
+                Наш дашборд предоставляет информацию о вашем соединении в реальном времени. Следите за скоростью и статусом зашифрованного туннеля.
               </p>
               
               <div className="space-y-4">
                 {[
-                  { icon: Activity, text: "Real-time bandwidth monitoring" },
-                  { icon: Navigation, text: "Instant server switching across 50+ countries" },
-                  { icon: Shield, text: "Automatic kill-switch status check" },
+                  { icon: Activity, text: "Мониторинг трафика в реальном времени" },
+                  { icon: Navigation, text: "Мгновенное переключение между 50+ локациями" },
+                  { icon: Shield, text: "Проверка статуса Kill-switch" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -71,8 +71,8 @@ export default function DashboardPreview() {
                     <Shield className="text-green-400 w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="font-bold">Protected</h4>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Active Session: 04h 22m</p>
+                    <h4 className="font-bold">Защищено</h4>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Сессия: 04ч 22м</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
@@ -83,17 +83,17 @@ export default function DashboardPreview() {
 
               <div className="grid grid-cols-2 gap-4 mb-8">
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                  <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Download</p>
-                  <p className="text-2xl font-headline font-bold">142.5 <span className="text-sm font-normal text-muted-foreground">Mbps</span></p>
+                  <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Загрузка</p>
+                  <p className="text-2xl font-headline font-bold">142.5 <span className="text-sm font-normal text-muted-foreground">Мбит/с</span></p>
                 </div>
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                  <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Upload</p>
-                  <p className="text-2xl font-headline font-bold">89.2 <span className="text-sm font-normal text-muted-foreground">Mbps</span></p>
+                  <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Отдача</p>
+                  <p className="text-2xl font-headline font-bold">89.2 <span className="text-sm font-normal text-muted-foreground">Мбит/с</span></p>
                 </div>
               </div>
 
               <div className="h-48 w-full">
-                <p className="text-xs text-muted-foreground uppercase font-semibold mb-4">Traffic Usage</p>
+                <p className="text-xs text-muted-foreground uppercase font-semibold mb-4">Использование трафика</p>
                 {mounted ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={data}>

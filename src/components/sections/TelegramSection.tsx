@@ -1,4 +1,3 @@
-
 "use client";
 
 import { motion } from "framer-motion";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 export default function TelegramSection() {
   return (
-    <section className="py-24 bg-primary/5">
+    <section className="py-24 bg-primary/5" id="telegram">
       <div className="container mx-auto px-6">
         <div className="glass-card rounded-[3rem] p-12 overflow-hidden relative">
           <div className="absolute top-0 right-0 w-[40%] h-full bg-primary/10 blur-[100px] -z-10" />
@@ -16,21 +15,21 @@ export default function TelegramSection() {
             <div className="lg:w-1/2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 mb-6">
                 <Send className="w-4 h-4 text-sky-400" />
-                <span className="text-xs font-bold text-sky-400 uppercase tracking-widest">Integrated Eco-system</span>
+                <span className="text-xs font-bold text-sky-400 uppercase tracking-widest">Единая экосистема</span>
               </div>
               <h2 className="text-4xl md:text-5xl font-headline font-bold mb-6">
-                Connect via <span className="text-[#24A1DE]">Telegram</span>
+                Управляйте через <span className="text-[#24A1DE]">Telegram</span>
               </h2>
               <p className="text-lg text-muted-foreground mb-10">
-                Experience the most advanced VPN management system ever built for Telegram. No need for complex external apps - control everything through our seamless bot.
+                Самый удобный способ управления VPN. Никаких сложных внешних сайтов — контролируйте всё через наш бот.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
                 {[
-                  { icon: LayoutDashboard, title: "Self-service Panel", desc: "Manage subscription & keys" },
-                  { icon: Send, title: "Instant Connect", desc: "Get config files in seconds" },
-                  { icon: Share2, title: "Referral System", desc: "Earn rewards for sharing" },
-                  { icon: Smartphone, title: "One-tap Control", desc: "Simple commands for all tasks" },
+                  { icon: LayoutDashboard, title: "Личный кабинет", desc: "Управление подпиской и ключами" },
+                  { icon: Send, title: "Мгновенная выдача", desc: "Конфиги приходят за секунды" },
+                  { icon: Share2, title: "Реферальная система", desc: "Бонусы за приглашение друзей" },
+                  { icon: Smartphone, title: "Простое управление", desc: "Команды для любых задач" },
                 ].map((item, i) => (
                   <div key={i} className="flex gap-4">
                     <div className="p-2 h-fit rounded-lg bg-white/5 text-primary">
@@ -44,8 +43,10 @@ export default function TelegramSection() {
                 ))}
               </div>
 
-              <Button size="lg" className="bg-[#24A1DE] hover:bg-[#208fbd] text-white rounded-full px-8 h-14">
-                Launch Bot @EdeliaVPN_Bot
+              <Button size="lg" className="bg-[#24A1DE] hover:bg-[#208fbd] text-white rounded-full px-8 h-14" asChild>
+                <a href="https://t.me/edelia_vpn_bot" target="_blank" rel="noopener noreferrer">
+                  Запустить @edelia_vpn_bot
+                </a>
               </Button>
             </div>
 
@@ -62,23 +63,23 @@ export default function TelegramSection() {
                     <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-bold">E</div>
                     <div>
                       <p className="font-bold text-sm">Edelia VPN Bot</p>
-                      <p className="text-xs text-green-400">bot is active</p>
+                      <p className="text-xs text-green-400">бот активен</p>
                     </div>
                   </div>
 
                   <div className="p-3 rounded-2xl rounded-tl-none bg-white/5 text-xs max-w-[85%] leading-relaxed">
-                    Welcome to Edelia VPN! Please choose an option below to get started.
+                    Добро пожаловать в Edelia VPN! Пожалуйста, выберите действие ниже.
                   </div>
 
                   <div className="space-y-2 pt-4">
                     <div className="p-3 rounded-xl border border-primary/30 text-center text-xs font-bold text-primary bg-primary/10">
-                      ⚡ CONNECT NOW
+                      ⚡ ПОДКЛЮЧИТЬСЯ
                     </div>
                     <div className="p-3 rounded-xl border border-white/10 text-center text-xs font-bold bg-white/5">
-                      💳 BUY SUBSCRIPTION
+                      💳 КУПИТЬ ПОДПИСКУ
                     </div>
                     <div className="p-3 rounded-xl border border-white/10 text-center text-xs font-bold bg-white/5">
-                      👤 MY PROFILE
+                      👤 МОЙ ПРОФИЛЬ
                     </div>
                   </div>
                 </div>

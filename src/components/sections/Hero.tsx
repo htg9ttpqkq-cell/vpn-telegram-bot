@@ -27,7 +27,7 @@ export default function Hero() {
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-8"
           >
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-sm font-medium text-primary">Next Generation Privacy</span>
+            <span className="text-sm font-medium text-primary">Приватность нового поколения</span>
           </motion.div>
 
           <motion.h1
@@ -36,7 +36,7 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-5xl md:text-7xl font-headline font-bold mb-6 text-gradient tracking-tight"
           >
-            Fast. Private. <span className="text-primary">Borderless.</span>
+            Быстро. Приватно. <span className="text-primary">Без границ.</span>
           </motion.h1>
 
           <motion.p
@@ -45,7 +45,7 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-xl text-muted-foreground mb-10 max-w-2xl"
           >
-            Premium VPN service with ultra-fast servers, secure encrypted connection and instant access worldwide. Experience the internet without limits.
+            Премиальный VPN-сервис с ультрабыстрыми серверами, зашифрованным соединением и мгновенным доступом по всему миру.
           </motion.p>
 
           <motion.div
@@ -55,10 +55,12 @@ export default function Hero() {
             className="flex flex-col sm:flex-row gap-4 mb-20"
           >
             <Button size="lg" className="h-14 px-8 rounded-full primary-gradient border-none hover:opacity-90 transition-opacity">
-              Get Started <ArrowRight className="ml-2 w-5 h-5" />
+              Начать <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
-            <Button size="lg" variant="outline" className="h-14 px-8 rounded-full border-white/10 hover:bg-white/5 bg-transparent backdrop-blur-md">
-              <Send className="mr-2 w-5 h-5 text-sky-400" /> Open Telegram
+            <Button size="lg" variant="outline" className="h-14 px-8 rounded-full border-white/10 hover:bg-white/5 bg-transparent backdrop-blur-md" asChild>
+              <a href="https://t.me/edelia_vpn_bot" target="_blank" rel="noopener noreferrer">
+                <Send className="mr-2 w-5 h-5 text-sky-400" /> Открыть Telegram
+              </a>
             </Button>
           </motion.div>
 
@@ -79,7 +81,7 @@ export default function Hero() {
                 src={imgSrc}
                 width={1200}
                 height={800}
-                alt={dashboardImg?.description || "Dashboard"}
+                alt={dashboardImg?.description || "Личный кабинет"}
                 className="rounded-lg shadow-2xl"
                 data-ai-hint={dashboardImg?.imageHint || "cybersecurity dashboard"}
               />

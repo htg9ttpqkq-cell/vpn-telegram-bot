@@ -7,29 +7,29 @@ import { cn } from "@/lib/utils";
 
 const plans = [
   {
-    name: "Standard",
-    duration: "1 Month",
-    price: "$7.99",
-    description: "Perfect for testing our network.",
-    features: ["All Server Locations", "VLESS Reality Support", "3 Devices", "Telegram Bot Control"],
+    name: "Стандарт",
+    duration: "1 месяц",
+    price: "149 ₽",
+    description: "Идеально для теста нашей сети.",
+    features: ["Все локации серверов", "Поддержка VLESS Reality", "3 устройства", "Бот в Telegram"],
     popular: false,
   },
   {
-    name: "Premium",
-    duration: "12 Months",
-    price: "$3.99",
-    billing: "Billed $47.88 / yr",
-    description: "The ultimate privacy shield.",
-    features: ["Priority Support", "Dedicated Nodes", "10 Devices", "Exclusive Early Access"],
+    name: "Премиум",
+    duration: "12 месяцев",
+    price: "1199 ₽",
+    billing: "Всего 99 ₽ / мес",
+    description: "Ультимативный щит приватности.",
+    features: ["Приоритетная поддержка", "Выделенные узлы", "10 устройств", "Ранний доступ к фишкам"],
     popular: true,
   },
   {
-    name: "Advanced",
-    duration: "3 Months",
-    price: "$5.99",
-    billing: "Billed $17.97 / qtr",
-    description: "Balanced security for digital nomads.",
-    features: ["All Server Locations", "VLESS Reality Support", "5 Devices", "Standard Support"],
+    name: "Продвинутый",
+    duration: "3 месяца",
+    price: "349 ₽",
+    billing: "Всего 116 ₽ / мес",
+    description: "Баланс безопасности и цены.",
+    features: ["Все локации серверов", "Поддержка VLESS Reality", "5 устройств", "Стандартная поддержка"],
     popular: false,
   },
 ];
@@ -39,8 +39,8 @@ export default function Pricing() {
     <section className="py-24 relative" id="pricing">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-headline font-bold mb-4">Transparent Pricing</h2>
-          <p className="text-muted-foreground">Select the plan that matches your lifestyle.</p>
+          <h2 className="text-4xl md:text-5xl font-headline font-bold mb-4">Прозрачные цены</h2>
+          <p className="text-muted-foreground">Выберите план, который подходит вашему стилю жизни.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
@@ -60,7 +60,7 @@ export default function Pricing() {
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-white text-xs font-bold uppercase tracking-widest">
-                  Most Popular
+                  Самый выгодный
                 </div>
               )}
               
@@ -71,7 +71,6 @@ export default function Pricing() {
 
               <div className="mb-8 flex items-baseline gap-1">
                 <span className="text-4xl font-headline font-bold">{plan.price}</span>
-                <span className="text-muted-foreground">/mo</span>
               </div>
               
               {plan.billing && (
@@ -100,8 +99,11 @@ export default function Pricing() {
                   "w-full rounded-full h-12 font-bold",
                   plan.popular ? "primary-gradient border-none" : "border-white/10"
                 )}
+                asChild
               >
-                Connect Now
+                <a href="https://t.me/edelia_vpn_bot" target="_blank" rel="noopener noreferrer">
+                  Подключиться
+                </a>
               </Button>
             </motion.div>
           ))}

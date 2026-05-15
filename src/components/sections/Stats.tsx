@@ -1,14 +1,13 @@
-
 "use client";
 
 import { motion } from "framer-motion";
 import { Shield, Zap, Globe, Cpu } from "lucide-react";
 
 const stats = [
-  { label: "Uptime", value: "99.9%", icon: Shield, color: "text-primary" },
-  { label: "Latency", value: "<50ms", icon: Zap, color: "text-accent" },
-  { label: "Global Servers", value: "500+", icon: Globe, color: "text-blue-400" },
-  { label: "Connected", value: "1M+", icon: Cpu, color: "text-cyan-400" },
+  { label: "Аптайм", value: "99.9%", icon: Shield, color: "text-primary" },
+  { label: "Задержка", value: "<50мс", icon: Zap, color: "text-accent" },
+  { label: "Серверов", value: "500+", icon: Globe, color: "text-blue-400" },
+  { label: "Пользователей", value: "1M+", icon: Cpu, color: "text-cyan-400" },
 ];
 
 export default function Stats() {
