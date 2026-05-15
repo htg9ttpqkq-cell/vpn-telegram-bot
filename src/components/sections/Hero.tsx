@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Send } from "lucide-react";
 
 export default function Hero() {
   return (
@@ -32,10 +34,27 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg text-muted-foreground max-w-2xl uppercase tracking-[0.2em] font-medium"
+            className="text-lg text-muted-foreground max-w-2xl uppercase tracking-[0.2em] font-medium mb-12"
           >
             Быстро. Приватно. Без компромиссов.
           </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <Button 
+              size="lg" 
+              className="rounded-none bg-white text-black px-10 h-14 font-black uppercase tracking-[0.2em] text-[12px] hover:bg-white/90 group"
+              asChild
+            >
+              <a href="https://t.me/edelia_vpn_bot" target="_blank" rel="noopener noreferrer">
+                Подключить бота
+                <Send className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </a>
+            </Button>
+          </motion.div>
         </div>
       </div>
     </section>
