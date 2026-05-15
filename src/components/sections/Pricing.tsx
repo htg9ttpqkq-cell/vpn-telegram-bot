@@ -52,21 +52,21 @@ export default function Pricing() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className={cn(
-                "p-10 rounded-none flex flex-col relative transition-all duration-300 border",
+                "p-10 rounded-none flex flex-col relative transition-all duration-500 border",
                 plan.popular 
-                ? "bg-white/[0.03] border-white z-10" 
+                ? "bg-white/[0.03] border-white/40 z-10" 
                 : "bg-transparent border-white/10 z-0"
               )}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-6 py-1 bg-white text-black text-[9px] font-black uppercase tracking-[0.2em]">
-                  Выгодно
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-6 py-1 bg-white text-black text-[9px] font-black uppercase tracking-[0.3em]">
+                  Популярный
                 </div>
               )}
               
               <div className="mb-10">
                 <h3 className="text-2xl font-bold uppercase tracking-widest stencil-text mb-2 text-white">{plan.name}</h3>
-                <p className="text-white/40 text-[10px] uppercase tracking-[0.2em] font-bold">{plan.duration}</p>
+                <p className="text-white/40 text-[10px] uppercase tracking-[0.3em] font-bold">{plan.duration}</p>
               </div>
 
               <div className="mb-10 flex items-baseline gap-1">
@@ -74,28 +74,27 @@ export default function Pricing() {
               </div>
               
               {plan.billing && (
-                <p className="text-[10px] text-white font-black mb-8 uppercase tracking-[0.2em] opacity-80">{plan.billing}</p>
+                <p className="text-[10px] text-white/80 font-black mb-8 uppercase tracking-[0.2em]">{plan.billing}</p>
               )}
 
-              <p className="text-white/40 text-[10px] mb-10 leading-relaxed uppercase tracking-widest font-bold">
+              <p className="text-white/30 text-[10px] mb-10 leading-relaxed uppercase tracking-[0.2em] font-bold">
                 {plan.description}
               </p>
 
               <div className="space-y-5 mb-12 flex-grow">
                 {plan.features.map((feature) => (
                   <div key={feature} className="flex items-center gap-4">
-                    <Check className="w-4 h-4 text-white/50" />
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">{feature}</span>
+                    <Check className="w-4 h-4 text-white/30" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">{feature}</span>
                   </div>
                 ))}
               </div>
 
               <Button 
                 size="lg" 
-                variant={plan.popular ? "default" : "outline"}
                 className={cn(
                   "w-full rounded-none h-14 font-black uppercase tracking-[0.3em] text-[10px]",
-                  plan.popular ? "bg-white text-black hover:bg-white/90 border-none" : "border-white/20 hover:bg-white/5 text-white"
+                  plan.popular ? "bg-white text-black hover:bg-white/90" : "bg-transparent border border-white/20 hover:bg-white/5 text-white"
                 )}
                 asChild
               >

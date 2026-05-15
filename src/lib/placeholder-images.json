@@ -1,22 +1,3 @@
 {
-  "placeholderImages": [
-    {
-      "id": "hero-dashboard",
-      "description": "Premium VPN Dashboard Mockup",
-      "imageUrl": "https://picsum.photos/seed/edelia-hero/1200/800",
-      "imageHint": "cybersecurity dashboard"
-    },
-    {
-      "id": "features-globe",
-      "description": "Global Server Network Visualization",
-      "imageUrl": "https://picsum.photos/seed/edelia-globe/800/600",
-      "imageHint": "digital globe"
-    },
-    {
-      "id": "dashboard-preview",
-      "description": "Interactive VPN Control Panel",
-      "imageUrl": "https://picsum.photos/seed/edelia-panel/1000/700",
-      "imageHint": "software interface"
-    }
-  ]
+  "placeholderImages": []
 }
