@@ -1,4 +1,3 @@
-
 "use client";
 
 import { motion } from "framer-motion";
@@ -9,6 +8,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function Hero() {
   const dashboardImg = PlaceHolderImages.find(img => img.id === "hero-dashboard");
+  const imgSrc = dashboardImg?.imageUrl || "https://picsum.photos/seed/edelia-hero/1200/800";
 
   return (
     <section className="relative pt-32 pb-20 overflow-hidden min-h-[90vh] flex items-center">
@@ -76,12 +76,12 @@ export default function Hero() {
             </div>
             <div className="p-4 pt-12">
               <Image
-                src={dashboardImg?.imageUrl || ""}
+                src={imgSrc}
                 width={1200}
                 height={800}
                 alt={dashboardImg?.description || "Dashboard"}
                 className="rounded-lg shadow-2xl"
-                data-ai-hint={dashboardImg?.imageHint}
+                data-ai-hint={dashboardImg?.imageHint || "cybersecurity dashboard"}
               />
             </div>
           </motion.div>

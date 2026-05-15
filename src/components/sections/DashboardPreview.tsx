@@ -1,10 +1,10 @@
-
 "use client";
 
 import { motion } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Zap, Activity, Navigation, MapPin } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const data = [
   { time: "00:00", speed: 45 },
@@ -17,6 +17,12 @@ const data = [
 ];
 
 export default function DashboardPreview() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <section className="py-24 relative overflow-hidden">
       <div className="container mx-auto px-6">
@@ -88,21 +94,25 @@ export default function DashboardPreview() {
 
               <div className="h-48 w-full">
                 <p className="text-xs text-muted-foreground uppercase font-semibold mb-4">Traffic Usage</p>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data}>
-                    <defs>
-                      <linearGradient id="colorSpeed" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#000', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                      itemStyle={{ color: '#fff' }}
-                    />
-                    <Area type="monotone" dataKey="speed" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorSpeed)" strokeWidth={3} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {mounted ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={data}>
+                      <defs>
+                        <linearGradient id="colorSpeed" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#000', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                        itemStyle={{ color: '#fff' }}
+                      />
+                      <Area type="monotone" dataKey="speed" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorSpeed)" strokeWidth={3} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="w-full h-full bg-white/5 animate-pulse rounded-lg" />
+                )}
               </div>
             </motion.div>
           </div>

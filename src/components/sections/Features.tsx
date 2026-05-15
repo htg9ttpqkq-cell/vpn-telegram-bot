@@ -2,7 +2,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShieldCheck, Rocket, Lock, Terminal, Radio, DeviceMobile } from "lucide-react";
+import { ShieldCheck, Rocket, Lock, Terminal, Radio, Smartphone } from "lucide-react";
 
 const features = [
   {
@@ -33,7 +33,7 @@ const features = [
   {
     title: "Multi-Device Sync",
     description: "Connect all your devices with a single account. Native apps for iOS, Android, and Windows.",
-    icon: DeviceMobile,
+    icon: Smartphone,
   },
 ];
 

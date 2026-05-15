@@ -1,9 +1,9 @@
-
 "use client";
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const plans = [
   {
@@ -51,11 +51,12 @@ export default function Pricing() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`p-8 rounded-3xl flex flex-col relative ${
+              className={cn(
+                "p-8 rounded-3xl flex flex-col relative transition-all duration-300",
                 plan.popular 
-                ? "bg-white/[0.05] border-2 border-primary neon-glow z-10 scale-105" 
+                ? "bg-white/[0.05] border-2 border-primary neon-glow z-10 lg:scale-105" 
                 : "glass-card z-0"
-              }`}
+              )}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-white text-xs font-bold uppercase tracking-widest">
@@ -94,9 +95,11 @@ export default function Pricing() {
 
               <Button 
                 size="lg" 
-                className={`w-full rounded-full h-12 font-bold ${
-                  plan.popular ? "primary-gradient border-none" : "variant-outline border-white/10"
-                }`}
+                variant={plan.popular ? "default" : "outline"}
+                className={cn(
+                  "w-full rounded-full h-12 font-bold",
+                  plan.popular ? "primary-gradient border-none" : "border-white/10"
+                )}
               >
                 Connect Now
               </Button>
