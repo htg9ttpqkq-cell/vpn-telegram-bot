@@ -46,7 +46,7 @@ export default function Hero() {
           >
             <Button 
               size="lg" 
-              className="rounded-none bg-white text-black px-10 h-14 font-black uppercase tracking-[0.2em] text-[12px] hover:bg-white/90 group"
+              className="rounded-none bg-black text-white border border-white/20 px-10 h-14 font-black uppercase tracking-[0.2em] text-[12px] hover:bg-white/5 group"
               asChild
             >
               <a href="https://t.me/edelia_vpn_bot" target="_blank" rel="noopener noreferrer">
