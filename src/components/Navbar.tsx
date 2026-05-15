@@ -35,7 +35,9 @@ export default function Navbar() {
 
         <div className="flex items-center gap-4">
           <Button variant="ghost" className="hidden sm:inline-flex text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-white">Войти</Button>
-          <Button className="rounded-none bg-white text-black px-6 font-bold uppercase tracking-tighter hover:bg-white/90">Подключить</Button>
+          <Button className="rounded-none bg-white text-black px-6 font-bold uppercase tracking-tighter hover:bg-white/90" asChild>
+            <a href="https://t.me/edelia_vpn_bot" target="_blank" rel="noopener noreferrer">Подключить</a>
+          </Button>
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="w-6 h-6" />
           </Button>
