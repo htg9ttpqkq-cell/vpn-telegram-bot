@@ -15,32 +15,32 @@ const plans = [
     popular: false,
   },
   {
-    name: "Премиум",
-    duration: "12 месяцев",
-    price: "1199 ₽",
-    billing: "Выгода 30%",
-    description: "Максимальный приоритет и скорость.",
-    features: ["VIP поддержка", "Выделенные узлы", "10 устройств", "Все фишки"],
-    popular: true,
-  },
-  {
     name: "Продвинутый",
     duration: "3 месяца",
     price: "349 ₽",
     billing: "Лучший выбор",
     description: "Сбалансированный тариф.",
     features: ["Все локации", "VLESS Reality", "5 устройств", "Поддержка"],
+    popular: true,
+  },
+  {
+    name: "Премиум",
+    duration: "12 месяцев",
+    price: "1199 ₽",
+    billing: "Выгода 30%",
+    description: "Максимальный приоритет и скорость.",
+    features: ["VIP поддержка", "Выделенные узлы", "10 устройств", "Все фишки"],
     popular: false,
   },
 ];
 
 export default function Pricing() {
   return (
-    <section className="py-24 relative" id="pricing">
+    <section className="py-24 bg-black relative" id="pricing">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-6xl font-bold mb-4 stencil-text">Тарифы</h2>
-          <p className="text-muted-foreground uppercase tracking-widest text-xs">Прозрачная стоимость без скрытых платежей</p>
+          <h2 className="text-4xl md:text-6xl font-bold mb-4 stencil-text text-white">Тарифы</h2>
+          <p className="text-muted-foreground uppercase tracking-[0.3em] text-[10px] font-bold">Прозрачная стоимость без скрытых платежей</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
@@ -59,33 +59,33 @@ export default function Pricing() {
               )}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-white text-black text-[10px] font-black uppercase tracking-widest">
-                  Популярный
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-white text-black text-[9px] font-black uppercase tracking-widest">
+                  Выгодно
                 </div>
               )}
               
               <div className="mb-8">
-                <h3 className="text-xl font-bold uppercase tracking-tighter stencil-text mb-1">{plan.name}</h3>
-                <p className="text-muted-foreground text-xs uppercase tracking-widest">{plan.duration}</p>
+                <h3 className="text-xl font-bold uppercase tracking-widest stencil-text mb-1 text-white">{plan.name}</h3>
+                <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-bold">{plan.duration}</p>
               </div>
 
               <div className="mb-8 flex items-baseline gap-1">
-                <span className="text-5xl font-bold stencil-text">{plan.price}</span>
+                <span className="text-5xl font-bold stencil-text text-white">{plan.price}</span>
               </div>
               
               {plan.billing && (
                 <p className="text-[10px] text-white font-black mb-6 uppercase tracking-widest opacity-60">{plan.billing}</p>
               )}
 
-              <p className="text-muted-foreground text-xs mb-8 leading-relaxed uppercase tracking-wider">
+              <p className="text-muted-foreground text-[10px] mb-8 leading-relaxed uppercase tracking-widest font-bold">
                 {plan.description}
               </p>
 
               <div className="space-y-4 mb-10 flex-grow">
                 {plan.features.map((feature) => (
                   <div key={feature} className="flex items-center gap-3">
-                    <Check className="w-3 h-3 text-white" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{feature}</span>
+                    <Check className="w-3 h-3 text-white opacity-50" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 text-white">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -95,7 +95,7 @@ export default function Pricing() {
                 variant={plan.popular ? "default" : "outline"}
                 className={cn(
                   "w-full rounded-none h-12 font-black uppercase tracking-widest text-[10px]",
-                  plan.popular ? "bg-white text-black hover:bg-white/90 border-none" : "border-white/10 hover:bg-white/5"
+                  plan.popular ? "bg-white text-black hover:bg-white/90 border-none" : "border-white/20 hover:bg-white/5 text-white"
                 )}
                 asChild
               >
