@@ -1,7 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'export', // Добавлено для сборки в обычный HTML на GitHub Pages
+  output: 'export',
+  trailingSlash: true,
   images: {
     unoptimized: true, // Добавлено, так как на GitHub Pages не работает стандартное сжатие картинок Next.js
     remotePatterns: [
