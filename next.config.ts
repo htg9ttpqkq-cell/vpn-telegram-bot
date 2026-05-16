@@ -1,14 +1,9 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  output: 'export', // Добавлено для сборки в обычный HTML на GitHub Pages
   images: {
+    unoptimized: true, // Добавлено, так как на GitHub Pages не работает стандартное сжатие картинок Next.js
     remotePatterns: [
       {
         protocol: 'https',
@@ -29,6 +24,12 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
 
