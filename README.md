@@ -1,5 +1,14 @@
-# Firebase Studio
+# EDELIA VPN
 
-This is a NextJS starter in Firebase Studio.
+Лендинг VPN-сервиса на Next.js. Сайт: https://edelia.ru
 
-To get started, take a look at src/app/page.tsx.
+## Локальный запуск
+
+```bash
+npm install
+npm run dev
+```
+
+## Деплой
+
+Пуш в `main` автоматически публикует сайт на GitHub Pages.
