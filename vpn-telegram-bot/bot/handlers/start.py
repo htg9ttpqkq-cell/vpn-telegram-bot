@@ -107,6 +107,18 @@ async def start(message: Message, db: Database, config: Config) -> None:
     user_id = message.from_user.id
     user_svc = UserService(db)
     user_svc.get_or_create_user(user_id)
+
+    # Обработка реферальной ссылки: /start <referrer_id>
+    if message.text:
+        parts = message.text.split(maxsplit=1)
+        if len(parts) > 1:
+            deep_link = parts[1].strip()
+            if deep_link.isdigit():
+                referrer_id = int(deep_link)
+                if referrer_id != user_id:
+                    # Связъ сохраняется один раз (метод защищён от повторов)
+                    db.set_referral(referrer_id, user_id)
+
     granted = SubscriptionService(db, config).try_grant_welcome_trial(user_id)
     lang = user_svc.get_language(user_id)
     subscription = db.get_subscription(user_id)

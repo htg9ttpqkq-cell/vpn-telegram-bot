@@ -8,6 +8,7 @@ from aiogram.exceptions import TelegramNetworkError
 
 from core.config import load_config
 from bot.handlers import admin, payment, profile, start
+from bot.middlewares.rate_limit import RateLimitMiddleware
 from core.database import Database
 from services.yookassa_service import YooKassaService
 
@@ -42,6 +43,11 @@ async def main() -> None:
     dp.include_router(payment.router)
     dp.include_router(profile.router)
     dp.include_router(admin.router)
+
+    # Защита от флуда / быстрых нажатий
+    rate_limit = RateLimitMiddleware()
+    dp.message.middleware(rate_limit)
+    dp.callback_query.middleware(rate_limit)
 
     log = logging.getLogger(__name__)
     try:

@@ -28,11 +28,12 @@ class AdminStates(StatesGroup):
 def admin_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="Pending payments", callback_data="admin:pending")
-    builder.button(text="Список пользователей", callback_data="admin:list")
-    builder.button(text="Активировать подписку", callback_data="admin:activate")
-    builder.button(text="Удалить подписку", callback_data="admin:clear_subscription")
-    builder.button(text="Сбросить конфиг", callback_data="admin:reset")
-    builder.button(text="Закрыть", callback_data="back_to_menu")
+    builder.button(text="📊 Статистика бота", callback_data="admin:stats")
+    builder.button(text="👥 Список пользователей", callback_data="admin:list")
+    builder.button(text="✅ Активировать подписку", callback_data="admin:activate")
+    builder.button(text="❌ Удалить подписку", callback_data="admin:clear_subscription")
+    builder.button(text="🔄 Сбросить конфиг", callback_data="admin:reset")
+    builder.button(text="❌ Закрыть", callback_data="back_to_menu")
     builder.adjust(1)
     return builder.as_markup()
 
@@ -74,6 +75,21 @@ async def admin_actions(
                 lines.append(f"{user.user_id} | {status} | {plan} | {end_date}")
             text = "Последние пользователи:\n" + "\n".join(lines)
         await edit_callback_message(callback, text, reply_markup=admin_keyboard())
+        await callback.answer()
+        return
+
+    if action == "stats":
+        stats = db.get_bot_stats()
+        text = (
+            f"📊 Статистика EDELIA | VPN\n\n"
+            f"👥 Всего пользователей: <b>{stats['total_users']}</b>\n"
+            f"🟢 Активных подписок: <b>{stats['active_subs']}</b>\n"
+            f"🎁 Триалов сегодня: <b>{stats['trials_today']}</b>\n"
+            f"🔗 Реферальных наград: <b>{stats['total_referral_rewards']}</b>"
+        )
+        await edit_callback_message(
+            callback, text, reply_markup=admin_keyboard(), parse_mode=ParseMode.HTML
+        )
         await callback.answer()
         return
 
@@ -173,7 +189,7 @@ async def admin_payment_actions(
 
     if action == "confirm":
         payment_service = PaymentService(db, config)
-        activation = payment_service.confirm_payment(payment_id)
+        activation = await payment_service.confirm_payment(payment_id)
         await payment_service.notify_user_about_activation(payment.user_id, activation)
         await edit_callback_message(
             callback,
@@ -200,20 +216,13 @@ async def admin_activate_user(
         return
 
     target_user_id = int(message.text)
-    db.upsert_user(target_user_id)
-    expires_at = datetime.now(timezone.utc) + timedelta(days=30)
-    db.set_subscription(
-        target_user_id,
-        plan="1m",
-        expires_at=expires_at,
-        is_active=True,
-        vless_link=vless_config_link(config),
-    )
+    # Используем SubscriptionService для корректной генерации токенов
+    activation = await SubscriptionService(db, config).activate_from_payment(target_user_id, "1m")
     db.set_trial_consumed(target_user_id)
 
     await state.clear()
     await message.answer(
-        f"Подписка активирована для {target_user_id} до {expires_at.strftime('%Y-%m-%d %H:%M UTC')}.",
+        f"Подписка активирована для {target_user_id} до {activation['expires_at']}.",
         reply_markup=admin_keyboard(),
     )
 

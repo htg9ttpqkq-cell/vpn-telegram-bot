@@ -40,7 +40,7 @@ class PaymentService:
             comment=comment,
         )
 
-    def confirm_payment(self, payment_id: int) -> Dict[str, str]:
+    async def confirm_payment(self, payment_id: int) -> Dict[str, str]:
         """Mark payment as paid and activate the subscription."""
         payment = self._db.get_payment_by_id(payment_id)
         if payment is None:
@@ -48,7 +48,7 @@ class PaymentService:
         if payment.status != "pending_review":
             raise ValueError("Payment already processed")
 
-        activation = self._subscription_service.activate_from_payment(
+        activation = await self._subscription_service.activate_from_payment(
             payment.user_id, payment.plan
         )
         self._db.update_payment_status_by_id(payment_id, "paid")

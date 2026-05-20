@@ -5,7 +5,7 @@ Russian is the default language. English is provided for the optional toggle.
 
 texts = {
     "ru": {
-        "home_title": "⚡ VPN Панель управления",
+        "home_title": "⚡ EDELIA | VPN",
         "status_label": "Статус",
         "status_active": "🟢 Защищён",
         "status_inactive": "🔴 Не активен",
@@ -29,9 +29,9 @@ texts = {
         "profile_inactive": "Не активен",
         "btn_renew": "🔄 Продлить",
         "btn_usage": "📊 Статистика",
-        "usage_stub": "📊 Статистика\n\nСкоро.",
-        "invite_title": "🎁 Реферальная система",
-        "invite_reward": "Бонус: +3 дня за приглашение",
+        "invite_title": "🎁 Реферальная программа",
+        "invite_reward": "За каждого друга, который <b>оформит подписку</b> — вы получаете <b>+1 месяц</b> бесплатно!",
+        "invite_bonus_received": "🎉 Ваш друг оформил подписку!\nВам начислен бонус <b>+1 месяц</b> к подписке.",
         "faq_title": "❓ Часто задаваемые вопросы",
         "faq_body": "Как подключиться? Откройте Установить VPN.\nОплата: ручная проверка.",
         "btn_support": "🆘 Поддержка",
@@ -45,7 +45,7 @@ texts = {
         "payment_pending": "⏳ Платёж получен\n\nОжидает проверки.",
         "not_active": "🔴 Не активен\n\nКупите тариф для подключения.",
         "activation_intro": (
-            "⚡ Доступ открыт\n\n"
+            "⚡ EDELIA | VPN — Доступ открыт!\n\n"
             "⚡ Скорость: высокая\n"
             "🔐 Статус: активен"
         ),
@@ -55,15 +55,21 @@ texts = {
             "2. Откройте ссылку или отсканируйте QR\n"
             "3. Нажмите «Подключить»"
         ),
-        "invite_link_label": "Ваша ссылка:",
+        "invite_link_label": "Ваша реферальная ссылка:",
         "unknown_plan": "Неизвестный тариф",
         "trial_granted_notice": (
             "🎁 Вам начислен тестовый период 7 дней. "
             "Откройте «Установить VPN» или «Профиль», чтобы получить конфиг."
         ),
+        "stats_title": "📊 Статистика",
+        "stats_plan": "Тариф",
+        "stats_expires": "Действует до",
+        "stats_days_left": "Осталось дней",
+        "stats_invited": "Приглашено друзей",
+        "stats_bonuses": "Бонусных месяцев получено",
     },
     "en": {
-        "home_title": "⚡ VPN Control Panel",
+        "home_title": "⚡ EDELIA | VPN",
         "status_label": "Status",
         "status_active": "🟢 Protected",
         "status_inactive": "🔴 Not active",
@@ -86,10 +92,10 @@ texts = {
         "profile_active": "Active",
         "profile_inactive": "Not active",
         "btn_renew": "🔄 Renew",
-        "btn_usage": "📊 Usage",
-        "usage_stub": "📊 Usage\n\nSoon.",
-        "invite_title": "🎁 Referral system",
-        "invite_reward": "Reward: +3 days per invite",
+        "btn_usage": "📊 Statistics",
+        "invite_title": "🎁 Referral program",
+        "invite_reward": "For each friend who <b>buys a subscription</b> — you get <b>+1 month</b> for free!",
+        "invite_bonus_received": "🎉 Your friend bought a subscription!\nYou received a bonus of <b>+1 month</b>.",
         "faq_title": "❓ Frequently Asked Questions",
         "faq_body": "How to connect? Open Install VPN.\nPayment check: manual review.",
         "btn_support": "🆘 Support",
@@ -103,7 +109,7 @@ texts = {
         "payment_pending": "⏳ Payment received\n\nAwaiting secure review.",
         "not_active": "🔴 Not active\n\nUnlock a plan to connect.",
         "activation_intro": (
-            "⚡ Access granted\n\n"
+            "⚡ EDELIA | VPN — Access granted!\n\n"
             "⚡ Speed: high\n"
             "🔐 Status: active"
         ),
@@ -113,12 +119,18 @@ texts = {
             "2. Open the link or scan the QR code\n"
             "3. Tap Connect"
         ),
-        "invite_link_label": "Your link:",
+        "invite_link_label": "Your referral link:",
         "unknown_plan": "Unknown plan",
         "trial_granted_notice": (
             "🎁 Your 7-day trial is active. "
             "Open Install VPN or Profile to get your config."
         ),
+        "stats_title": "📊 Statistics",
+        "stats_plan": "Plan",
+        "stats_expires": "Expires on",
+        "stats_days_left": "Days left",
+        "stats_invited": "Friends invited",
+        "stats_bonuses": "Bonus months received",
     },
 }
 

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
-from typing import Iterator, List, Optional, Set
+from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 
 @dataclass
@@ -94,6 +94,18 @@ class Database:
                     country TEXT NOT NULL,
                     ip TEXT NOT NULL,
                     status TEXT NOT NULL DEFAULT 'active'
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS referrals (
+                    referrer_id INTEGER NOT NULL,
+                    referred_id INTEGER NOT NULL PRIMARY KEY,
+                    rewarded INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY(referrer_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                    FOREIGN KEY(referred_id) REFERENCES users(user_id) ON DELETE CASCADE
                 )
                 """
             )
@@ -497,3 +509,89 @@ class Database:
                 )
             )
         return result
+
+    # ── Referral methods ─────────────────────────────────────────────────────
+
+    def set_referral(self, referrer_id: int, referred_id: int) -> bool:
+        """Сохраняет реферальную связь. Возвращает True если связь создана впервые."""
+        if referrer_id == referred_id:
+            return False
+        now = datetime.now(timezone.utc).isoformat()
+        with self._lock, self._connect() as conn:
+            existing = conn.execute(
+                "SELECT referrer_id FROM referrals WHERE referred_id = ?",
+                (referred_id,),
+            ).fetchone()
+            if existing:
+                return False
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO referrals (referrer_id, referred_id, rewarded, created_at)
+                VALUES (?, ?, 0, ?)
+                """,
+                (referrer_id, referred_id, now),
+            )
+        return True
+
+    def get_referrer(self, referred_id: int) -> Optional[int]:
+        """Возвращает user_id реферера для данного пользователя."""
+        with self._lock, self._connect() as conn:
+            row = conn.execute(
+                "SELECT referrer_id FROM referrals WHERE referred_id = ? AND rewarded = 0",
+                (referred_id,),
+            ).fetchone()
+        return int(row["referrer_id"]) if row else None
+
+    def mark_referral_rewarded(self, referrer_id: int, referred_id: int) -> None:
+        """Помечает реферальное вознаграждение как выданное."""
+        with self._lock, self._connect() as conn:
+            conn.execute(
+                "UPDATE referrals SET rewarded = 1 WHERE referrer_id = ? AND referred_id = ?",
+                (referrer_id, referred_id),
+            )
+
+    def get_referral_stats(self, user_id: int) -> Tuple[int, int]:
+        """Возвращает (всего_приглашено, вознаграждений_получено) для пользователя."""
+        with self._lock, self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(rewarded) AS rewarded
+                FROM referrals
+                WHERE referrer_id = ?
+                """,
+                (user_id,),
+            ).fetchone()
+        if row is None:
+            return (0, 0)
+        return (int(row["total"]), int(row["rewarded"] or 0))
+
+    # ── Bot statistics ────────────────────────────────────────────────────────
+
+    def get_bot_stats(self) -> Dict[str, int]:
+        """Возвращает агрегированную статистику бота."""
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        with self._lock, self._connect() as conn:
+            total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+            active_subs = conn.execute(
+                "SELECT COUNT(*) FROM subscriptions WHERE is_active = 1 AND expires_at > ?",
+                (now.isoformat(),),
+            ).fetchone()[0]
+            trials_today = conn.execute(
+                """
+                SELECT COUNT(*) FROM subscriptions
+                WHERE plan = 'trial' AND updated_at >= ?
+                """,
+                (today_start,),
+            ).fetchone()[0]
+            total_referral_rewards = conn.execute(
+                "SELECT COUNT(*) FROM referrals WHERE rewarded = 1"
+            ).fetchone()[0]
+        return {
+            "total_users": int(total_users),
+            "active_subs": int(active_subs),
+            "trials_today": int(trials_today),
+            "total_referral_rewards": int(total_referral_rewards),
+        }

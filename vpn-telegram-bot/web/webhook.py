@@ -86,7 +86,7 @@ async def yookassa_webhook(
     if user_id <= 0 or not plan:
         raise HTTPException(status_code=400, detail="incomplete metadata")
 
-    activation = subscriptions.activate_from_payment(user_id, plan)
+    activation = await subscriptions.activate_from_payment(user_id, plan)
     db.update_payment_status(payment_id, "paid")
     await subscriptions.notify_user_about_activation(user_id, activation)
     logger.info("Payment %s completed for user %s", payment_id, user_id)

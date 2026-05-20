@@ -73,15 +73,53 @@ async def my_subscription(callback: CallbackQuery, db: Database) -> None:
 
 @router.callback_query(F.data == "usage")
 async def usage(callback: CallbackQuery, db: Database) -> None:
-    lang = (
-        UserService(db).get_language(callback.from_user.id)
-        if callback.from_user
-        else "ru"
-    )
+    if callback.from_user is None:
+        await callback.answer()
+        return
+
+    user_id = callback.from_user.id
+    lang = UserService(db).get_language(user_id)
+    subscription = db.get_subscription(user_id)
+    now = datetime.now(timezone.utc)
+
+    # Статистика подписки
+    if subscription and subscription.plan and subscription.expires_at:
+        from .i18n import plan_title as _plan_title
+        plan_label = _plan_title(lang, subscription.plan)
+        exp_str = subscription.expires_at.strftime("%Y-%m-%d")
+        days_left = max(0, (subscription.expires_at - now).days)
+    else:
+        plan_label = "—"
+        exp_str = "—"
+        days_left = 0
+
+    # Реферальная статистика
+    total_invited, bonuses_received = db.get_referral_stats(user_id)
+
+    if lang == "ru":
+        msg = (
+            f"<b>{t(lang, 'stats_title')}</b>\n\n"
+            f"📋 <b>{t(lang, 'stats_plan')}:</b> {plan_label}\n"
+            f"📅 <b>{t(lang, 'stats_expires')}:</b> {exp_str}\n"
+            f"⏳ <b>{t(lang, 'stats_days_left')}:</b> {days_left}\n\n"
+            f"👥 <b>{t(lang, 'stats_invited')}:</b> {total_invited}\n"
+            f"🎁 <b>{t(lang, 'stats_bonuses')}:</b> {bonuses_received}"
+        )
+    else:
+        msg = (
+            f"<b>{t(lang, 'stats_title')}</b>\n\n"
+            f"📋 <b>{t(lang, 'stats_plan')}:</b> {plan_label}\n"
+            f"📅 <b>{t(lang, 'stats_expires')}:</b> {exp_str}\n"
+            f"⏳ <b>{t(lang, 'stats_days_left')}:</b> {days_left}\n\n"
+            f"👥 <b>{t(lang, 'stats_invited')}:</b> {total_invited}\n"
+            f"🎁 <b>{t(lang, 'stats_bonuses')}:</b> {bonuses_received}"
+        )
+
     await edit_callback_message(
         callback,
-        t(lang, "usage_stub"),
+        msg,
         reply_markup=_menu_keyboard(lang),
+        parse_mode=ParseMode.HTML,
     )
     await callback.answer()
 
