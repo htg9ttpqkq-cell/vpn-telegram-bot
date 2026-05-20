@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from os import getenv
 from typing import Final, NamedTuple, Optional
 from urllib.parse import urlparse
 
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 
-load_dotenv()
+# Находим файл .env и загружаем его
+dotenv_path = find_dotenv()
+load_dotenv(dotenv_path)
 
 # База HTTPS для ссылок вида https://<домен>/<токен> (импорт подписки в клиенте).
 DEFAULT_SUBSCRIPTION_CONFIG_BASE_URL: Final[str] = "https://edelia.ru"
@@ -159,6 +162,9 @@ class Config:
         admin_ids = _parse_admin_ids(getenv("ADMIN_IDS"))
 
         db_path = _strip(getenv("DB_PATH")) or "vpn_bot.db"
+        if dotenv_path and not os.path.isabs(db_path):
+            env_dir = os.path.dirname(os.path.abspath(dotenv_path))
+            db_path = os.path.normpath(os.path.join(env_dir, db_path))
         subscription_config_base_url = _resolve_subscription_config_base_url()
         vless_template = _resolve_vless_template()
         support_raw = _strip(getenv("SUPPORT_TEXT"))
