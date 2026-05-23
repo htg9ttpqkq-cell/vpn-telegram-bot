@@ -193,8 +193,10 @@ async def get_config(callback: CallbackQuery, db: Database, config: Config) -> N
         subscription = db.get_subscription(callback.from_user.id)
 
     vless_link = subscription.vless_link or ""
+    # Имя сервера берём из конфига (не хардкодим) — задаётся через SERVER_1_NAME в .env
+    server_display_name = config.primary_server.display_name
     if "#" in vless_link:
-        vless_link = vless_link.split("#", 1)[0] + "#🇩🇪 EDELIA | Germany"
+        vless_link = vless_link.split("#", 1)[0] + "#" + server_display_name
     sub_url = f"{config.subscription_config_base_url}/sub/{subscription.sub_token}"
 
     if lang == "ru":

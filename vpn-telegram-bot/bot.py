@@ -19,10 +19,12 @@ async def main() -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    log = logging.getLogger(__name__)
 
     config = load_config()
     db = Database(config.db_path)
     db.init()
+
     yookassa = None
     if config.yookassa_enabled:
         yookassa = YooKassaService(
@@ -30,9 +32,18 @@ async def main() -> None:
             secret_key=config.yookassa_secret_key,
             return_url=config.yookassa_return_url,
         )
-        logging.getLogger(__name__).info("YooKassa: enabled")
+        log.info("YooKassa: enabled")
     else:
-        logging.getLogger(__name__).info("YooKassa: disabled (set YOOKASSA_SHOP_ID and YOOKASSA_SECRET_KEY to enable)")
+        log.info(
+            "YooKassa: disabled (set YOOKASSA_SHOP_ID and YOOKASSA_SECRET_KEY to enable)"
+        )
+
+    # Выводим список серверов при старте для диагностики
+    for i, srv in enumerate(config.servers, 1):
+        log.info(
+            "Server #%d: %s | XUI=%s | inbound=%d",
+            i, srv.display_name, srv.xui_url, srv.xui_inbound_id,
+        )
 
     bot = Bot(
         token=config.bot_token,
@@ -50,23 +61,27 @@ async def main() -> None:
     dp.message.middleware(rate_limit)
     dp.callback_query.middleware(rate_limit)
 
-    log = logging.getLogger(__name__)
-    
-    # Конфигурация веб-сервера Uvicorn
-    config_uvicorn = uvicorn.Config(
+    # Uvicorn: host/port читаются из config (→ UVICORN_HOST / UVICORN_PORT в .env)
+    # Default: 127.0.0.1:8000 — безопасно за Nginx-прокси.
+    uvicorn_cfg = uvicorn.Config(
         "web.webhook:app",
-        host="0.0.0.0",
-        port=8000,
+        host=config.uvicorn_host,
+        port=config.uvicorn_port,
         log_level="info",
     )
-    server = uvicorn.Server(config_uvicorn)
+    server = uvicorn.Server(uvicorn_cfg)
 
     try:
         await bot.delete_webhook(drop_pending_updates=True)
-        log.info("Starting bot polling and FastAPI web server concurrently...")
+        log.info(
+            "Starting bot polling and FastAPI web server on %s:%d ...",
+            config.uvicorn_host,
+            config.uvicorn_port,
+        )
+        # asyncio.gather — параллельный запуск, ни один не блокирует другой
         await asyncio.gather(
             dp.start_polling(bot),
-            server.serve()
+            server.serve(),
         )
     except TelegramNetworkError as exc:
         log.error(

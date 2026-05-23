@@ -20,6 +20,7 @@ app = FastAPI(title="VPN Payment Webhook")
 config = load_config()
 db = Database(config.db_path)
 db.init()
+
 yookassa: Optional[YooKassaService] = None
 if config.yookassa_enabled:
     yookassa = YooKassaService(
@@ -30,6 +31,7 @@ if config.yookassa_enabled:
     logger.info("YooKassa webhook: enabled")
 else:
     logger.info("YooKassa webhook: disabled (missing shop id or secret key)")
+
 subscriptions = SubscriptionService(db, config)
 
 
@@ -105,26 +107,31 @@ async def get_subscription(token: str) -> Response:
         raise HTTPException(status_code=404, detail="Subscription not found")
 
     now = datetime.now(timezone.utc)
-    # Проверяем, активна ли подписка и не истек ли срок действия
     if not sub.is_active or (sub.expires_at and sub.expires_at < now):
         raise HTTPException(status_code=403, detail="Subscription is inactive or expired")
 
     if not sub.vless_link:
         raise HTTPException(status_code=404, detail="Config not generated")
 
+    # Имя сервера в VLESS-фрагменте берём из конфига (не хардкодим)
+    server_display_name = config.primary_server.display_name
     vless_link = sub.vless_link
     if "#" in vless_link:
-        vless_link = vless_link.split("#", 1)[0] + "#🇩🇪 EDELIA | Germany"
+        vless_link = vless_link.split("#", 1)[0] + "#" + server_display_name
 
     content = vless_link + "\n"
     encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
 
     headers = {
         "profile-title": "EDELIA | VPN",
-        "Content-Disposition": 'attachment; filename="EDELIA | VPN"; filename*=utf-8\'\'EDELIA%20%7C%20VPN',
+        "Content-Disposition": (
+            'attachment; filename="EDELIA | VPN"; '
+            "filename*=utf-8''EDELIA%20%7C%20VPN"
+        ),
         "profile-update-interval": "24",
-        # Всегда передаём заголовок, чтобы Hiddify мерял пинг через VLESS, а не через наш порт 8000.
-        # expire=0 означает «неограниченно»; если есть реальный срок — подставляем его.
+        # Передаём заголовок всегда, чтобы Hiddify измерял пинг до VLESS-прокси,
+        # а не до нашего веб-сервера (устраняет ложный пинг 600+ мс).
+        # expire=0 означает «без ограничений»; при наличии реального срока — подставляем его.
         "subscription-userinfo": (
             f"upload=0; download=0; total=0; expire={int(sub.expires_at.timestamp())}"
             if sub.expires_at
