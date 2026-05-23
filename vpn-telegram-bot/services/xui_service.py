@@ -257,7 +257,86 @@ class ThreeXUIService:
                         f"({client_uuid}) after delete-and-retry."
                     )
 
+    async def disable_client(self, client_uuid: str, email: str) -> None:
+        """Деактивирует клиента на панели (enable=False), не удаляя запись.
+
+        Используется фоновым планировщиком при истечении подписки.
+        Клиент остаётся в панели, но не может подключиться.
+        При продлении подписки — достаточно вызвать sync_client (enable=True).
+        """
+        if not self.username or not self.password:
+            logger.warning(
+                "[%s] 3X-UI credentials not set — skipping disable.", self.display_name
+            )
+            return
+
+        email = email.lower().strip()
+        # Строим payload: те же поля, но enable=False и expiryTime=прошлое время
+        clients_data = {
+            "clients": [
+                {
+                    "id": client_uuid,
+                    "email": email,
+                    "enable": False,   # ← ключевое отличие от sync_client
+                    "flow": "",
+                    "limitIp": 0,
+                    "totalGB": 0,
+                    "expiryTime": 1,   # 1 ms от эпохи = давно истёк
+                    "tgId": "",
+                    "subId": "",
+                    "reset": 0,
+                }
+            ]
+        }
+        payload = {
+            "id": self.inbound_id,
+            "settings": json.dumps(clients_data),
+        }
+
+        async with httpx.AsyncClient(timeout=15.0) as http:
+            try:
+                await self._login(http)
+            except ThreeXUIError as exc:
+                logger.error(
+                    "[%s] Cannot login to disable client %s: %s",
+                    self.display_name, client_uuid, exc,
+                )
+                return
+
+            # Проверяем существование — если нет, не падаем
+            exists = await self._client_exists(http, client_uuid)
+            if not exists:
+                logger.info(
+                    "[%s] disable_client: UUID %s not found in panel — skipping.",
+                    self.display_name, client_uuid,
+                )
+                return
+
+            update_url = (
+                f"{self.xui_url}/panel/api/inbounds/updateClient/{client_uuid}"
+            )
+            try:
+                resp = await http.post(update_url, json=payload)
+                resp.raise_for_status()
+                result = resp.json()
+                if result.get("success"):
+                    logger.info(
+                        "[%s] Disabled client %s (%s) on panel.",
+                        self.display_name, email, client_uuid,
+                    )
+                else:
+                    logger.warning(
+                        "[%s] disable_client returned failure for %s: %s",
+                        self.display_name, client_uuid, result.get("msg"),
+                    )
+            except Exception as exc:
+                logger.error(
+                    "[%s] disable_client exception for %s (%s): %s",
+                    self.display_name, email, client_uuid, exc,
+                )
+
     async def delete_client(self, client_uuid: str, email: str) -> None:
+
         """Удаляет клиента из VLESS-инбаунда 3X-UI."""
         if not self.username or not self.password:
             logger.warning(

@@ -1,3 +1,13 @@
+"""Слой доступа к базе данных (SQLite).
+
+Ключевые гарантии:
+  - Все модификации выполняются под self._lock (thread-safe).
+  - Атомарные операции (активация + реферал) используют явные SQLite-транзакции
+    с BEGIN / COMMIT / ROLLBACK, исключая частичное применение.
+  - Защита от Race Condition при подтверждении платежей через
+    UPDATE … WHERE status = 'pending_review' с проверкой rowcount.
+"""
+
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -34,15 +44,45 @@ class Database:
         self._db_path = Path(db_path)
         self._lock = Lock()
 
+    # ── Соединение ────────────────────────────────────────────────────────────
+
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
+        """Открывает соединение с автоматическим commit/close."""
         conn = sqlite3.connect(self._db_path)
         conn.row_factory = sqlite3.Row
+        # Включаем WAL-режим для конкурентного чтения без блокировок
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
         try:
             yield conn
             conn.commit()
         finally:
             conn.close()
+
+    @contextmanager
+    def _transact(self) -> Iterator[sqlite3.Connection]:
+        """Открывает соединение с явной транзакцией (BEGIN IMMEDIATE / ROLLBACK).
+
+        Используйте для атомарных составных операций, где нужен rollback.
+        IMMEDIATE блокирует запись сразу, исключая конкурентные UPDATE-ы.
+        """
+        conn = sqlite3.connect(self._db_path)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.isolation_level = None  # ручное управление транзакцией
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            yield conn
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            raise
+        finally:
+            conn.close()
+
+    # ── Инициализация схемы ───────────────────────────────────────────────────
 
     def init(self) -> None:
         with self._lock, self._connect() as conn:
@@ -109,6 +149,13 @@ class Database:
                 )
                 """
             )
+            # Индекс для быстрого поиска просроченных подписок (фоновый планировщик)
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_subs_active_expires
+                ON subscriptions (is_active, expires_at)
+                """
+            )
             self._migrate_existing_schema(conn)
 
     def _migrate_existing_schema(self, conn: sqlite3.Connection) -> None:
@@ -125,7 +172,6 @@ class Database:
         columns: Set[str] = {
             row["name"] for row in conn.execute("PRAGMA table_info(subscriptions)").fetchall()
         }
-
         if "plan" not in columns:
             conn.execute("ALTER TABLE subscriptions ADD COLUMN plan TEXT")
         if "expires_at" not in columns:
@@ -142,11 +188,14 @@ class Database:
             conn.execute("ALTER TABLE subscriptions ADD COLUMN sub_token TEXT")
         if "client_uuid" not in columns:
             conn.execute("ALTER TABLE subscriptions ADD COLUMN client_uuid TEXT")
+
         payment_columns: Set[str] = {
             row["name"] for row in conn.execute("PRAGMA table_info(payments)").fetchall()
         }
         if "comment" not in payment_columns:
             conn.execute("ALTER TABLE payments ADD COLUMN comment TEXT")
+
+    # ── Users ─────────────────────────────────────────────────────────────────
 
     def upsert_user(self, user_id: int) -> None:
         now = datetime.now(timezone.utc).isoformat()
@@ -182,10 +231,7 @@ class Database:
         now = datetime.now(timezone.utc).isoformat()
         with self._lock, self._connect() as conn:
             conn.execute(
-                """
-                UPDATE users SET trial_consumed = 1, updated_at = ?
-                WHERE user_id = ?
-                """,
+                "UPDATE users SET trial_consumed = 1, updated_at = ? WHERE user_id = ?",
                 (now, user_id),
             )
 
@@ -213,6 +259,8 @@ class Database:
                 (user_id, language, now, now),
             )
 
+    # ── Subscriptions ─────────────────────────────────────────────────────────
+
     def _row_to_subscription(self, row: sqlite3.Row) -> UserSubscription:
         raw_expires = row["expires_at"]
         expires_at = datetime.fromisoformat(raw_expires) if raw_expires else None
@@ -232,8 +280,7 @@ class Database:
             row = conn.execute(
                 """
                 SELECT user_id, plan, expires_at, is_active, vless_link, sub_token, client_uuid
-                FROM subscriptions
-                WHERE user_id = ?
+                FROM subscriptions WHERE user_id = ?
                 """,
                 (user_id,),
             ).fetchone()
@@ -246,8 +293,7 @@ class Database:
             row = conn.execute(
                 """
                 SELECT user_id, plan, expires_at, is_active, vless_link, sub_token, client_uuid
-                FROM subscriptions
-                WHERE sub_token = ?
+                FROM subscriptions WHERE sub_token = ?
                 """,
                 (sub_token,),
             ).fetchone()
@@ -261,9 +307,7 @@ class Database:
             row = conn.execute(
                 """
                 SELECT user_id, plan, expires_at, is_active, vless_link, sub_token, client_uuid
-                FROM subscriptions
-                WHERE vless_link LIKE ?
-                LIMIT 1
+                FROM subscriptions WHERE vless_link LIKE ? LIMIT 1
                 """,
                 (f"%/{token}",),
             ).fetchone()
@@ -287,29 +331,100 @@ class Database:
             conn.execute(
                 """
                 INSERT INTO subscriptions (
-                    user_id, plan, expires_at, is_active, vless_link, sub_token, client_uuid, updated_at
+                    user_id, plan, expires_at, is_active, vless_link,
+                    sub_token, client_uuid, updated_at
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(user_id) DO UPDATE SET
-                    plan = excluded.plan,
+                    plan       = excluded.plan,
                     expires_at = excluded.expires_at,
-                    is_active = excluded.is_active,
+                    is_active  = excluded.is_active,
                     vless_link = excluded.vless_link,
-                    sub_token = excluded.sub_token,
+                    sub_token  = excluded.sub_token,
                     client_uuid = excluded.client_uuid,
                     updated_at = excluded.updated_at
                 """,
                 (
-                    user_id,
-                    plan,
-                    expires_at.isoformat(),
-                    int(is_active),
-                    vless_link,
-                    sub_token,
-                    client_uuid,
-                    now,
+                    user_id, plan, expires_at.isoformat(), int(is_active),
+                    vless_link, sub_token, client_uuid, now,
                 ),
             )
+
+    def activate_subscription_with_referral(
+        self,
+        *,
+        user_id: int,
+        plan: str,
+        expires_at: datetime,
+        vless_link: str,
+        sub_token: str,
+        client_uuid: str,
+        referrer_id: Optional[int],
+    ) -> None:
+        """Активирует подписку и (опционально) начисляет реферальный бонус —
+        в рамках единой ACID-транзакции.
+
+        Если любой шаг выбрасывает исключение — вся транзакция откатывается.
+        Это исключает ситуацию «реферал начислен, но подписка не сохранена».
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        with self._lock, self._transact() as conn:
+            # 1. Активируем подписку
+            conn.execute(
+                """
+                INSERT INTO subscriptions (
+                    user_id, plan, expires_at, is_active, vless_link,
+                    sub_token, client_uuid, updated_at
+                )
+                VALUES (?, ?, ?, 1, ?, ?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    plan        = excluded.plan,
+                    expires_at  = excluded.expires_at,
+                    is_active   = 1,
+                    vless_link  = excluded.vless_link,
+                    sub_token   = excluded.sub_token,
+                    client_uuid = excluded.client_uuid,
+                    updated_at  = excluded.updated_at
+                """,
+                (user_id, plan, expires_at.isoformat(), vless_link, sub_token, client_uuid, now),
+            )
+            # 2. Отмечаем триал использованным
+            conn.execute(
+                "UPDATE users SET trial_consumed = 1, updated_at = ? WHERE user_id = ?",
+                (now, user_id),
+            )
+            # 3. Реферальное вознаграждение (только если реферер задан)
+            if referrer_id is not None:
+                conn.execute(
+                    """
+                    UPDATE referrals SET rewarded = 1
+                    WHERE referrer_id = ? AND referred_id = ? AND rewarded = 0
+                    """,
+                    (referrer_id, user_id),
+                )
+
+    def deactivate_subscription(self, user_id: int) -> None:
+        """Принудительно деактивирует подписку (вызывается фоновым планировщиком)."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._lock, self._connect() as conn:
+            conn.execute(
+                "UPDATE subscriptions SET is_active = 0, updated_at = ? WHERE user_id = ?",
+                (now, user_id),
+            )
+
+    def get_expired_active_subscriptions(self) -> List[UserSubscription]:
+        """Возвращает все активные подписки с истёкшим сроком (для фонового cron)."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._lock, self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT user_id, plan, expires_at, is_active, vless_link, sub_token, client_uuid
+                FROM subscriptions
+                WHERE is_active = 1 AND expires_at IS NOT NULL AND expires_at <= ?
+                """,
+                (now,),
+            ).fetchall()
+        return [self._row_to_subscription(r) for r in rows]
 
     def reset_vless_link(
         self,
@@ -337,17 +452,15 @@ class Database:
             conn.execute(
                 """
                 UPDATE subscriptions
-                SET plan = NULL,
-                    expires_at = NULL,
-                    is_active = 0,
-                    vless_link = NULL,
-                    sub_token = NULL,
-                    client_uuid = NULL,
+                SET plan = NULL, expires_at = NULL, is_active = 0,
+                    vless_link = NULL, sub_token = NULL, client_uuid = NULL,
                     updated_at = ?
                 WHERE user_id = ?
                 """,
                 (now, user_id),
             )
+
+    # ── Payments ──────────────────────────────────────────────────────────────
 
     def create_payment(
         self,
@@ -370,31 +483,57 @@ class Database:
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(yookassa_payment_id) DO UPDATE SET
-                    status = excluded.status,
-                    comment = excluded.comment,
+                    status     = excluded.status,
+                    comment    = excluded.comment,
                     updated_at = excluded.updated_at
                 """,
                 (
-                    user_id,
-                    plan,
-                    amount,
-                    status,
-                    yookassa_payment_id,
-                    idempotency_key,
-                    comment,
-                    now,
-                    now,
+                    user_id, plan, amount, status,
+                    yookassa_payment_id, idempotency_key, comment, now, now,
                 ),
             )
             return int(cursor.lastrowid)
+
+    def claim_payment_atomic(self, payment_id: int) -> bool:
+        """Атомарно захватывает платёж: меняет статус с 'pending_review' → 'processing'.
+
+        Возвращает True только если строка была изменена (первый вызов).
+        Параллельные вызовы вернут False — защита от Double-Spending.
+        Использует BEGIN IMMEDIATE для исключения гонки записи.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        with self._lock, self._transact() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE payments SET status = 'processing', updated_at = ?
+                WHERE id = ? AND status = 'pending_review'
+                """,
+                (now, payment_id),
+            )
+            return cursor.rowcount == 1
+
+    def claim_yookassa_payment_atomic(self, yookassa_payment_id: str) -> bool:
+        """Аналог claim_payment_atomic для YooKassa-вебхуков.
+
+        Защита от повторной обработки одного и того же payment_id.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        with self._lock, self._transact() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE payments SET status = 'processing', updated_at = ?
+                WHERE yookassa_payment_id = ? AND status NOT IN ('paid', 'processing')
+                """,
+                (now, yookassa_payment_id),
+            )
+            return cursor.rowcount == 1
 
     def get_payment_by_yookassa_id(self, yookassa_payment_id: str) -> Optional[PaymentRecord]:
         with self._lock, self._connect() as conn:
             row = conn.execute(
                 """
                 SELECT id, user_id, plan, amount, status, yookassa_payment_id, comment
-                FROM payments
-                WHERE yookassa_payment_id = ?
+                FROM payments WHERE yookassa_payment_id = ?
                 """,
                 (yookassa_payment_id,),
             ).fetchone()
@@ -415,8 +554,7 @@ class Database:
             row = conn.execute(
                 """
                 SELECT id, user_id, plan, amount, status, yookassa_payment_id, comment
-                FROM payments
-                WHERE id = ?
+                FROM payments WHERE id = ?
                 """,
                 (payment_id,),
             ).fetchone()
@@ -436,11 +574,7 @@ class Database:
         now = datetime.now(timezone.utc).isoformat()
         with self._lock, self._connect() as conn:
             conn.execute(
-                """
-                UPDATE payments
-                SET status = ?, updated_at = ?
-                WHERE yookassa_payment_id = ?
-                """,
+                "UPDATE payments SET status = ?, updated_at = ? WHERE yookassa_payment_id = ?",
                 (status, now, yookassa_payment_id),
             )
 
@@ -448,11 +582,7 @@ class Database:
         now = datetime.now(timezone.utc).isoformat()
         with self._lock, self._connect() as conn:
             conn.execute(
-                """
-                UPDATE payments
-                SET status = ?, updated_at = ?
-                WHERE id = ?
-                """,
+                "UPDATE payments SET status = ?, updated_at = ? WHERE id = ?",
                 (status, now, payment_id),
             )
 
@@ -461,56 +591,44 @@ class Database:
             rows = conn.execute(
                 """
                 SELECT id, user_id, plan, amount, status, yookassa_payment_id, comment
-                FROM payments
-                WHERE status = 'pending_review'
-                ORDER BY created_at ASC
-                LIMIT ?
+                FROM payments WHERE status = 'pending_review'
+                ORDER BY created_at ASC LIMIT ?
                 """,
                 (limit,),
             ).fetchall()
-        result: List[PaymentRecord] = []
-        for row in rows:
-            result.append(
-                PaymentRecord(
-                    id=row["id"],
-                    user_id=row["user_id"],
-                    plan=row["plan"],
-                    amount=row["amount"],
-                    status=row["status"],
-                    yookassa_payment_id=row["yookassa_payment_id"],
-                    comment=row["comment"],
-                )
+        return [
+            PaymentRecord(
+                id=r["id"], user_id=r["user_id"], plan=r["plan"], amount=r["amount"],
+                status=r["status"], yookassa_payment_id=r["yookassa_payment_id"],
+                comment=r["comment"],
             )
-        return result
+            for r in rows
+        ]
 
     def list_users(self, limit: int = 100) -> List[UserSubscription]:
         with self._lock, self._connect() as conn:
             rows = conn.execute(
                 """
                 SELECT user_id, plan, expires_at, is_active, vless_link
-                FROM subscriptions
-                ORDER BY updated_at DESC
-                LIMIT ?
+                FROM subscriptions ORDER BY updated_at DESC LIMIT ?
                 """,
                 (limit,),
             ).fetchall()
-
         result: List[UserSubscription] = []
         for row in rows:
             raw_expires = row["expires_at"]
-            expires_at = datetime.fromisoformat(raw_expires) if raw_expires else None
             result.append(
                 UserSubscription(
                     user_id=row["user_id"],
                     plan=row["plan"],
-                    expires_at=expires_at,
+                    expires_at=datetime.fromisoformat(raw_expires) if raw_expires else None,
                     is_active=bool(row["is_active"]),
                     vless_link=row["vless_link"],
                 )
             )
         return result
 
-    # ── Referral methods ─────────────────────────────────────────────────────
+    # ── Referrals ─────────────────────────────────────────────────────────────
 
     def set_referral(self, referrer_id: int, referred_id: int) -> bool:
         """Сохраняет реферальную связь. Возвращает True если связь создана впервые."""
@@ -534,7 +652,7 @@ class Database:
         return True
 
     def get_referrer(self, referred_id: int) -> Optional[int]:
-        """Возвращает user_id реферера для данного пользователя."""
+        """Возвращает user_id реферера для данного пользователя (только если ещё не вознаграждён)."""
         with self._lock, self._connect() as conn:
             row = conn.execute(
                 "SELECT referrer_id FROM referrals WHERE referred_id = ? AND rewarded = 0",
@@ -551,15 +669,12 @@ class Database:
             )
 
     def get_referral_stats(self, user_id: int) -> Tuple[int, int]:
-        """Возвращает (всего_приглашено, вознаграждений_получено) для пользователя."""
+        """Возвращает (всего_приглашено, вознаграждений_получено)."""
         with self._lock, self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT
-                    COUNT(*) AS total,
-                    SUM(rewarded) AS rewarded
-                FROM referrals
-                WHERE referrer_id = ?
+                SELECT COUNT(*) AS total, SUM(rewarded) AS rewarded
+                FROM referrals WHERE referrer_id = ?
                 """,
                 (user_id,),
             ).fetchone()
@@ -567,7 +682,7 @@ class Database:
             return (0, 0)
         return (int(row["total"]), int(row["rewarded"] or 0))
 
-    # ── Bot statistics ────────────────────────────────────────────────────────
+    # ── Statistics ────────────────────────────────────────────────────────────
 
     def get_bot_stats(self) -> Dict[str, int]:
         """Возвращает агрегированную статистику бота."""
@@ -580,10 +695,7 @@ class Database:
                 (now.isoformat(),),
             ).fetchone()[0]
             trials_today = conn.execute(
-                """
-                SELECT COUNT(*) FROM subscriptions
-                WHERE plan = 'trial' AND updated_at >= ?
-                """,
+                "SELECT COUNT(*) FROM subscriptions WHERE plan = 'trial' AND updated_at >= ?",
                 (today_start,),
             ).fetchone()[0]
             total_referral_rewards = conn.execute(
