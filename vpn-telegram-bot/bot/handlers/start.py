@@ -48,6 +48,7 @@ def main_menu_keyboard(lang: str) -> ReplyKeyboardMarkup:
     builder.button(text=t(lang, "btn_tariffs"))
     builder.button(text=t(lang, "btn_invite"))
     builder.button(text=t(lang, "btn_faq"))
+    builder.button(text=t(lang, "btn_docs"))
     builder.button(
         text=t(lang, "btn_switch_en") if lang != "en" else t(lang, "btn_switch_ru")
     )
@@ -119,7 +120,7 @@ async def start(message: Message, db: Database, config: Config) -> None:
                     # Связъ сохраняется один раз (метод защищён от повторов)
                     db.set_referral(referrer_id, user_id)
 
-    granted = SubscriptionService(db, config).try_grant_welcome_trial(user_id)
+    granted = await SubscriptionService(db, config).try_grant_welcome_trial(user_id)
     lang = user_svc.get_language(user_id)
     subscription = db.get_subscription(user_id)
     extra = f"\n\n{t(lang, 'trial_granted_notice')}" if granted else ""
@@ -359,6 +360,23 @@ async def msg_faq(message: Message, db: Database) -> None:
     await message.answer(
         f"{t(lang, 'faq_title')}\n\n{t(lang, 'faq_body')}",
         reply_markup=builder.as_markup(),
+    )
+
+
+@router.message(F.text.in_(all_locale_values("btn_docs")))
+async def msg_docs(message: Message, db: Database) -> None:
+    if not message.from_user:
+        return
+    lang = UserService(db).get_language(message.from_user.id)
+    builder = InlineKeyboardBuilder()
+    builder.button(text=t(lang, "btn_privacy"), url="https://telegra.ph/Politika-konfidencialnosti-04-01-26")
+    builder.button(text=t(lang, "btn_terms"), url="https://telegra.ph/Polzovatelskoe-soglashenie-04-01-19")
+    builder.button(text=t(lang, "btn_back"), callback_data="menu")
+    builder.adjust(1)
+    await message.answer(
+        t(lang, "docs_title"),
+        reply_markup=builder.as_markup(),
+        parse_mode="HTML"
     )
 
 

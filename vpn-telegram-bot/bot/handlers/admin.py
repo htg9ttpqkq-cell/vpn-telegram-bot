@@ -242,6 +242,24 @@ async def admin_clear_subscription(
 
     target_user_id = int(message.text)
     db.upsert_user(target_user_id)
+
+    # Delete client from 3X-UI
+    sub = db.get_subscription(target_user_id)
+    if sub and sub.client_uuid:
+        from services.xui_service import ThreeXUIService
+        xui = ThreeXUIService(
+            xui_url=config.xui_url,
+            username=config.xui_username,
+            password=config.xui_password,
+            inbound_id=config.xui_inbound_id,
+        )
+        try:
+            email = f"id_{target_user_id}"
+            await xui.delete_client(sub.client_uuid, email)
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to delete client {target_user_id} from 3X-UI: {exc}")
+
     db.clear_subscription(target_user_id)
 
     await state.clear()
@@ -266,6 +284,24 @@ async def admin_reset_config(
 
     target_user_id = int(message.text)
     db.upsert_user(target_user_id)
+
+    # Delete client from 3X-UI during reset
+    sub = db.get_subscription(target_user_id)
+    if sub and sub.client_uuid:
+        from services.xui_service import ThreeXUIService
+        xui = ThreeXUIService(
+            xui_url=config.xui_url,
+            username=config.xui_username,
+            password=config.xui_password,
+            inbound_id=config.xui_inbound_id,
+        )
+        try:
+            email = f"id_{target_user_id}"
+            await xui.delete_client(sub.client_uuid, email)
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to delete client {target_user_id} from 3X-UI during reset: {exc}")
+
     new_link = vless_config_link(config)
     db.reset_vless_link(target_user_id, new_link)
 

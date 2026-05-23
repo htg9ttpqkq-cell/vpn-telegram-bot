@@ -170,10 +170,31 @@ async def get_config(callback: CallbackQuery, db: Database, config: Config) -> N
             sub_token=sub_token,
             client_uuid=client_uuid,
         )
+
+        # Sync to 3X-UI panel
+        if subscription.expires_at:
+            from services.xui_service import ThreeXUIService
+            xui = ThreeXUIService(
+                xui_url=config.xui_url,
+                username=config.xui_username,
+                password=config.xui_password,
+                inbound_id=config.xui_inbound_id,
+            )
+            try:
+                email = f"id_{callback.from_user.id}"
+                await xui.sync_client(client_uuid, email, sub_token, subscription.expires_at)
+            except Exception as exc:
+                import logging
+                logging.getLogger(__name__).exception(
+                    f"Failed to sync client {callback.from_user.id} to 3X-UI in get_config: {exc}"
+                )
+
         # Перезагружаем подписку из БД
         subscription = db.get_subscription(callback.from_user.id)
 
     vless_link = subscription.vless_link or ""
+    if "#" in vless_link:
+        vless_link = vless_link.split("#", 1)[0] + "#EDELIA | Germany"
     sub_url = f"{config.subscription_config_base_url}/sub/{subscription.sub_token}"
 
     if lang == "ru":

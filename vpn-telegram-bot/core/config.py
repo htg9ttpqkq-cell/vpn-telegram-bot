@@ -24,11 +24,13 @@ def _strip(value: Optional[str]) -> str:
 
 
 def _parse_admin_ids(raw_value: Optional[str]) -> tuple[int, ...]:
-    """Разбор ``ADMIN_IDS``: список целых через запятую."""
+    """Разбор ``ADMIN_IDS``: список целых через запятую, точку с запятой или пробел."""
     if not raw_value or not raw_value.strip():
         return ()
     ids: list[int] = []
-    for part in raw_value.split(","):
+    # Заменяем ';' и пробелы на ',' для совместимости
+    normalized = raw_value.replace(";", ",").replace(" ", ",")
+    for part in normalized.split(","):
         part = part.strip()
         if not part:
             continue
@@ -148,6 +150,10 @@ class Config:
     sbp_phone_or_card: str
     delete_user_menu_message_after_sec: int
     welcome_trial_enabled: bool
+    xui_url: str
+    xui_username: str
+    xui_password: str
+    xui_inbound_id: int
 
     @staticmethod
     def _require_env(name: str, value: Optional[str]) -> str:
@@ -191,6 +197,15 @@ class Config:
         disable_trial = _strip(getenv("DISABLE_WELCOME_TRIAL")).lower()
         welcome_trial_enabled = disable_trial not in ("1", "true", "yes", "on")
 
+        xui_url = _strip(getenv("XUI_URL")) or "http://127.0.0.1:2096"
+        xui_username = _strip(getenv("XUI_USERNAME"))
+        xui_password = _strip(getenv("XUI_PASSWORD"))
+        raw_inbound_id = _strip(getenv("XUI_INBOUND_ID"))
+        try:
+            xui_inbound_id = int(raw_inbound_id) if raw_inbound_id else 1
+        except ValueError:
+            xui_inbound_id = 1
+
         return cls(
             bot_token=token,
             admin_ids=admin_ids,
@@ -207,6 +222,10 @@ class Config:
             sbp_phone_or_card=sbp_phone_or_card,
             delete_user_menu_message_after_sec=delete_user_menu_message_after_sec,
             welcome_trial_enabled=welcome_trial_enabled,
+            xui_url=xui_url,
+            xui_username=xui_username,
+            xui_password=xui_password,
+            xui_inbound_id=xui_inbound_id,
         )
 
 

@@ -26,8 +26,15 @@ class SubscriptionService:
     def __init__(self, db: Database, config: Config) -> None:
         self._db = db
         self._config = config
+        from services.xui_service import ThreeXUIService
+        self._xui = ThreeXUIService(
+            xui_url=config.xui_url,
+            username=config.xui_username,
+            password=config.xui_password,
+            inbound_id=config.xui_inbound_id,
+        )
 
-    def try_grant_welcome_trial(self, user_id: int) -> bool:
+    async def try_grant_welcome_trial(self, user_id: int) -> bool:
         """Одноразовые 7 дней для новых пользователей без активной подписки."""
         if not self._config.welcome_trial_enabled:
             return False
@@ -66,6 +73,14 @@ class SubscriptionService:
             client_uuid=client_uuid,
         )
         self._db.set_trial_consumed(user_id)
+
+        # Sync to 3X-UI panel
+        try:
+            email = f"id_{user_id}"
+            await self._xui.sync_client(client_uuid, email, sub_token, expires_at)
+        except Exception as exc:
+            logger.exception(f"Failed to sync trial client {user_id} to 3X-UI: {exc}")
+
         return True
 
     async def activate_from_payment(self, user_id: int, plan: str) -> Dict[str, str]:
@@ -100,6 +115,14 @@ class SubscriptionService:
             client_uuid=client_uuid,
         )
         self._db.set_trial_consumed(user_id)
+
+        # Sync to 3X-UI panel
+        try:
+            email = f"id_{user_id}"
+            await self._xui.sync_client(client_uuid, email, sub_token, expires_at)
+        except Exception as exc:
+            logger.exception(f"Failed to sync paid client {user_id} to 3X-UI: {exc}")
+
         # Проверяем наличие реферера и начисляем ему бонус
         await self._process_referral_reward(user_id)
         return {
@@ -114,7 +137,7 @@ class SubscriptionService:
         if referrer_id is None:
             return
         try:
-            self._add_bonus_days(referrer_id, REFERRAL_BONUS_DAYS)
+            await self._add_bonus_days(referrer_id, REFERRAL_BONUS_DAYS)
             self._db.mark_referral_rewarded(referrer_id, referred_id)
             await self._notify_referrer_bonus(referrer_id)
         except Exception:
@@ -124,7 +147,7 @@ class SubscriptionService:
                 referred_id,
             )
 
-    def _add_bonus_days(self, user_id: int, days: int) -> None:
+    async def _add_bonus_days(self, user_id: int, days: int) -> None:
         """Adds bonus days to user's subscription."""
         self._db.upsert_user(user_id)
         current = self._db.get_subscription(user_id)
@@ -156,6 +179,13 @@ class SubscriptionService:
             sub_token=sub_token,
             client_uuid=client_uuid,
         )
+
+        # Sync to 3X-UI panel
+        try:
+            email = f"id_{user_id}"
+            await self._xui.sync_client(client_uuid, email, sub_token, expires_at)
+        except Exception as exc:
+            logger.exception(f"Failed to sync referral bonus client {user_id} to 3X-UI: {exc}")
 
     async def _notify_referrer_bonus(self, referrer_id: int) -> None:
         """Sends a notification to the referrer about receiving a bonus month."""

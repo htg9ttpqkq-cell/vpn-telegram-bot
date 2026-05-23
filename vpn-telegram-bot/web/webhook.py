@@ -112,10 +112,18 @@ async def get_subscription(token: str) -> Response:
     if not sub.vless_link:
         raise HTTPException(status_code=404, detail="Config not generated")
 
-    content = sub.vless_link + "\n"
+    vless_link = sub.vless_link
+    if "#" in vless_link:
+        vless_link = vless_link.split("#", 1)[0] + "#EDELIA | Germany"
+
+    content = vless_link + "\n"
     encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
 
-    headers = {}
+    headers = {
+        "profile-title": "EDELIA | VPN",
+        "Content-Disposition": 'attachment; filename="EDELIA | VPN"; filename*=utf-8\'\'EDELIA%20%7C%20VPN',
+        "profile-update-interval": "24",
+    }
     if sub.expires_at:
         # Добавляем стандартный заголовок с информацией о лимитах и сроке для отображения в клиентах
         headers["Subscription-Userinfo"] = f"upload=0; download=0; total=0; expire={int(sub.expires_at.timestamp())}"
