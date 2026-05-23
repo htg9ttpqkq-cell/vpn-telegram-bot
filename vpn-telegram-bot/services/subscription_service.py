@@ -223,14 +223,14 @@ class SubscriptionService:
                 await bot.send_message(
                     chat_id=user_id,
                     text=(
-                        f"⚠️ <b>Ваша подписка EDELIA | VPN истекла.</b>\n\n"
-                        f"Ваш доступ к VPN был автоматически приостановлен.\n"
-                        f"Чтобы продолжить пользоваться защитой, продлите подписку:"
+                        "📍 <b>EDELIA | Ваш доступ приостановлен.</b>\n\n"
+                        "Срок вашей подписки истёк. Для возобновления безупречного "
+                        "соединения продлите доступ в один клик:"
                         if lang == "ru"
                         else (
-                            f"⚠️ <b>Your EDELIA | VPN subscription has expired.</b>\n\n"
-                            f"Your VPN access has been automatically suspended.\n"
-                            f"Renew your subscription to continue:"
+                            "📍 <b>EDELIA | Your access has been suspended.</b>\n\n"
+                            "Your subscription has expired. To restore your flawless "
+                            "connection, renew your access in one tap:"
                         )
                     ),
                     reply_markup=builder.as_markup(),
@@ -322,6 +322,7 @@ class SubscriptionService:
                     f"{texts[lk]['profile_expiry']}: {payload['expires_at']}"
                 ),
                 reply_markup=builder.as_markup(),
+                parse_mode=ParseMode.HTML,
             )
         except Exception:
             logger.exception("Failed to notify user %d about activation", user_id)

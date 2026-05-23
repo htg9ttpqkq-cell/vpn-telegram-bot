@@ -72,13 +72,14 @@ async def handle_plan_selection(
     await edit_callback_message(
         callback,
         f"{t(lang, 'checkout')}\n\n"
-        f"{t(lang, 'profile_plan')}: {plan_name}\n"
-        f"{t(lang, 'price')}: {amount} ₽\n\n"
+        f"{t(lang, 'profile_plan')}: <b>{plan_name}</b>\n"
+        f"{t(lang, 'price')}: <b>{amount} ₽</b>\n\n"
         f"{t(lang, 'secure_sbp')}\n"
-        f"{config.sbp_phone_or_card}\n"
-        f"{config.sbp_recipient}\n"
-        f"{payment_comment}",
+        f"<code>{config.sbp_phone_or_card}</code>\n"
+        f"{config.sbp_recipient}\n\n"
+        f"Комментарий: <code>{payment_comment}</code>",
         reply_markup=builder.as_markup(),
+        parse_mode="HTML",
     )
     await callback.answer()
 

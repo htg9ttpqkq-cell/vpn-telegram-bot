@@ -98,7 +98,10 @@ def _dashboard_text(subscription, lang: str) -> str:
         and subscription.expires_at > now
     )
     status = t(lang, "status_active") if is_active else t(lang, "status_inactive")
-    return f"{t(lang, 'home_title')}\n\n{t(lang, 'status_label')}:\n{status}"
+    return (
+        f"{t(lang, 'home_title')}\n\n"
+        f"{t(lang, 'status_label')}:\n{status}"
+    )
 
 
 @router.message(CommandStart())
@@ -123,10 +126,13 @@ async def start(message: Message, db: Database, config: Config) -> None:
     granted = await SubscriptionService(db, config).try_grant_welcome_trial(user_id)
     lang = user_svc.get_language(user_id)
     subscription = db.get_subscription(user_id)
+    # Первое открытие — полноценное приветствие; повторное — краткий дашборд
+    welcome = t(lang, "home_welcome")
     extra = f"\n\n{t(lang, 'trial_granted_notice')}" if granted else ""
     await message.answer(
-        _dashboard_text(subscription, lang) + extra,
+        welcome + extra,
         reply_markup=main_menu_keyboard(lang),
+        parse_mode="HTML",
     )
 
 
@@ -160,6 +166,7 @@ async def support(callback: CallbackQuery, config: Config, db: Database) -> None
         callback,
         f"{t(lang, 'support_title')}\n\n{config.support_text}",
         reply_markup=builder.as_markup(),
+        parse_mode="HTML",
     )
     await callback.answer()
 
@@ -235,9 +242,12 @@ async def invite_friend(callback: CallbackQuery, db: Database) -> None:
     link = f"https://t.me/{username}?start={callback.from_user.id}"
     await edit_callback_message(
         callback,
-        f"{t(lang, 'invite_title')}\n\n{t(lang, 'invite_link_label')}\n{link}\n\n"
-        f"{t(lang, 'invite_reward')}",
+        f"{t(lang, 'invite_title')}\n\n"
+        f"{t(lang, 'invite_reward')}\n\n"
+        f"{t(lang, 'invite_link_label')}\n"
+        f"<code>{link}</code>",
         reply_markup=_menu_keyboard(lang),
+        parse_mode="HTML",
     )
     await callback.answer()
 
@@ -300,6 +310,7 @@ async def msg_profile(message: Message, db: Database) -> None:
         if subscription and subscription.expires_at
         else "—"
     )
+    server_name = "—"
     builder = InlineKeyboardBuilder()
     builder.button(text=t(lang, "btn_renew"), callback_data="buy_subscription")
     builder.button(text=t(lang, "btn_usage"), callback_data="usage")
@@ -307,10 +318,12 @@ async def msg_profile(message: Message, db: Database) -> None:
     builder.adjust(1)
     await message.answer(
         f"{t(lang, 'profile_title')}\n\n"
+        f"👤 ID: <code>{user_id}</code>\n"
         f"{t(lang, 'profile_status')}: {status}\n"
         f"{t(lang, 'profile_plan')}: {plan_label}\n"
-        f"{t(lang, 'profile_expiry')}: {end_date}",
+        f"{t(lang, 'profile_expiry')}: <code>{end_date}</code>",
         reply_markup=builder.as_markup(),
+        parse_mode="HTML",
     )
 
 
@@ -342,9 +355,12 @@ async def msg_invite(message: Message, db: Database) -> None:
     username = me.username or "bot"
     link = f"https://t.me/{username}?start={message.from_user.id}"
     await message.answer(
-        f"{t(lang, 'invite_title')}\n\n{t(lang, 'invite_link_label')}\n{link}\n\n"
-        f"{t(lang, 'invite_reward')}",
+        f"{t(lang, 'invite_title')}\n\n"
+        f"{t(lang, 'invite_reward')}\n\n"
+        f"{t(lang, 'invite_link_label')}\n"
+        f"<code>{link}</code>",
         reply_markup=main_menu_keyboard(lang),
+        parse_mode="HTML",
     )
 
 
@@ -360,6 +376,7 @@ async def msg_faq(message: Message, db: Database) -> None:
     await message.answer(
         f"{t(lang, 'faq_title')}\n\n{t(lang, 'faq_body')}",
         reply_markup=builder.as_markup(),
+        parse_mode="HTML",
     )
 
 

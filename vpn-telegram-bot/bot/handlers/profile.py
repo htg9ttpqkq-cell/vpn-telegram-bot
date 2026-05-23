@@ -63,10 +63,12 @@ async def my_subscription(callback: CallbackQuery, db: Database) -> None:
     await edit_callback_message(
         callback,
         f"{t(lang, 'profile_title')}\n\n"
+        f"\ud83d\udc64 ID: <code>{user_id}</code>\n"
         f"{t(lang, 'profile_status')}: {status}\n"
         f"{t(lang, 'profile_plan')}: {plan_label}\n"
-        f"{t(lang, 'profile_expiry')}: {end_date}",
+        f"{t(lang, 'profile_expiry')}: <code>{end_date}</code>",
         reply_markup=builder.as_markup(),
+        parse_mode=ParseMode.HTML,
     )
     await callback.answer()
 
@@ -98,21 +100,21 @@ async def usage(callback: CallbackQuery, db: Database) -> None:
 
     if lang == "ru":
         msg = (
-            f"<b>{t(lang, 'stats_title')}</b>\n\n"
-            f"📋 <b>{t(lang, 'stats_plan')}:</b> {plan_label}\n"
-            f"📅 <b>{t(lang, 'stats_expires')}:</b> {exp_str}\n"
-            f"⏳ <b>{t(lang, 'stats_days_left')}:</b> {days_left}\n\n"
+            f"{t(lang, 'stats_title')}\n\n"
+            f"📅 <b>{t(lang, 'stats_plan')}:</b> {plan_label}\n"
+            f"📍 <b>{t(lang, 'stats_expires')}:</b> {exp_str}\n"
+            f"✨ <b>{t(lang, 'stats_days_left')}:</b> {days_left}\n\n"
             f"👥 <b>{t(lang, 'stats_invited')}:</b> {total_invited}\n"
-            f"🎁 <b>{t(lang, 'stats_bonuses')}:</b> {bonuses_received}"
+            f"💎 <b>{t(lang, 'stats_bonuses')}:</b> {bonuses_received}"
         )
     else:
         msg = (
-            f"<b>{t(lang, 'stats_title')}</b>\n\n"
-            f"📋 <b>{t(lang, 'stats_plan')}:</b> {plan_label}\n"
-            f"📅 <b>{t(lang, 'stats_expires')}:</b> {exp_str}\n"
-            f"⏳ <b>{t(lang, 'stats_days_left')}:</b> {days_left}\n\n"
+            f"{t(lang, 'stats_title')}\n\n"
+            f"📅 <b>{t(lang, 'stats_plan')}:</b> {plan_label}\n"
+            f"📍 <b>{t(lang, 'stats_expires')}:</b> {exp_str}\n"
+            f"✨ <b>{t(lang, 'stats_days_left')}:</b> {days_left}\n\n"
             f"👥 <b>{t(lang, 'stats_invited')}:</b> {total_invited}\n"
-            f"🎁 <b>{t(lang, 'stats_bonuses')}:</b> {bonuses_received}"
+            f"💎 <b>{t(lang, 'stats_bonuses')}:</b> {bonuses_received}"
         )
 
     await edit_callback_message(
@@ -192,29 +194,36 @@ async def get_config(callback: CallbackQuery, db: Database, config: Config) -> N
         # Перезагружаем подписку из БД
         subscription = db.get_subscription(callback.from_user.id)
 
-    vless_link = subscription.vless_link or ""
-    # Принудительно подставляем display_name как фрагмент (#) — всегда, без условия.
     server_display_name = config.primary_server.display_name
-    vless_link = vless_link.split("#", 1)[0] + "#" + server_display_name
     sub_url = f"{config.subscription_config_base_url}/sub/{subscription.sub_token}"
 
     if lang == "ru":
         msg = (
-            f"<b>{t(lang, 'config_title')}</b>\n\n"
-            f"1️⃣ <b>Ссылка для ручного импорта</b> (скопируйте её и импортируйте в VPN-клиент):\n"
-            f"<code>{escape(vless_link)}</code>\n\n"
-            f"2️⃣ <b>Ссылка автообновления подписки</b> (для Shadowrocket, Nekobox, v2rayN):\n"
-            f"<code>{escape(sub_url)}</code>\n\n"
-            f"<i>Рекомендуется использовать ссылку автообновления, чтобы ваш клиент автоматически узнавал о продлении подписки.</i>"
+            "💎 <b>Ваша премиум-подписка EDELIA | VPN</b>\n\n"
+            "Используйте единую ссылку автообновления. Она автоматически продлевает доступ и поддерживает стабильное подключение без вашего участия.\n\n"
+            "📍 <b>Ссылка для подключения:</b>\n"
+            f"<code>{escape(sub_url)}</code>\n"
+            "<i>(Нажмите на ссылку, чтобы скопировать её)</i>\n\n"
+            "---\n"
+            "📱 <b>Как настроить в 1 клик:</b>\n\n"
+            "1. Скопируйте ссылку выше.\n"
+            "2. Откройте ваше приложение (Hiddify, Shadowrocket, Nekobox или v2rayN).\n"
+            "3. Нажмите <b>«Добавить подписку»</b> (или значок «+») и вставьте ссылку.\n\n"
+            f"Подключение автоматически настроит локацию <b>{escape(server_display_name)}</b> в премиальном качестве."
         )
     else:
         msg = (
-            f"<b>{t(lang, 'config_title')}</b>\n\n"
-            f"1️⃣ <b>Manual import link</b> (copy and import into your VPN client):\n"
-            f"<code>{escape(vless_link)}</code>\n\n"
-            f"2️⃣ <b>Auto-update subscription link</b> (for Shadowrocket, Nekobox, v2rayN):\n"
-            f"<code>{escape(sub_url)}</code>\n\n"
-            f"<i>It is recommended to use the subscription link so your client automatically detects renewals.</i>"
+            "💎 <b>Your EDELIA | VPN Premium Subscription</b>\n\n"
+            "Use the single auto-update link. It automatically renews your access and maintains a stable connection without your involvement.\n\n"
+            "📍 <b>Connection Link:</b>\n"
+            f"<code>{escape(sub_url)}</code>\n"
+            "<i>(Tap the link to copy it)</i>\n\n"
+            "---\n"
+            "📱 <b>How to set up in 1 tap:</b>\n\n"
+            "1. Copy the link above.\n"
+            "2. Open your application (Hiddify, Shadowrocket, Nekobox, or v2rayN).\n"
+            "3. Tap <b>\"Add subscription\"</b> (or the \"+\" icon) and paste the link.\n\n"
+            f"The connection will automatically set up the <b>{escape(server_display_name)}</b> location in premium quality."
         )
 
     await edit_callback_message(
