@@ -194,7 +194,11 @@ async def get_config(callback: CallbackQuery, db: Database, config: Config) -> N
         # Перезагружаем подписку из БД
         subscription = db.get_subscription(callback.from_user.id)
 
-    server_display_name = config.primary_server.display_name
+    server_display_name = (
+        config.primary_server.display_name
+        .encode("utf-8", "surrogatepass")
+        .decode("utf-8", "ignore")
+    )
     sub_url = f"{config.subscription_config_base_url}/sub/{subscription.sub_token}"
 
     if lang == "ru":

@@ -12,6 +12,17 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 logger = logging.getLogger(__name__)
 
 
+def _sanitize(text: str) -> str:
+    """Удаляет одиночные суррогатные символы, которые ломают UTF-8 кодирование в aiohttp.
+
+    Суррогаты (U+D800–U+DFFF) могут появляться, если имя сервера или эмодзи флага
+    (например 🇩🇪) хранится в БД или конфиге с некорректной кодировкой.
+    encode('utf-8', 'surrogatepass') → decode('utf-8', 'ignore') безопасно
+    удаляет все bitty-символы, не трогая нормальные Unicode-эмодзи.
+    """
+    return text.encode("utf-8", "surrogatepass").decode("utf-8", "ignore")
+
+
 async def edit_callback_message(
     callback: CallbackQuery,
     text: str,
@@ -20,11 +31,12 @@ async def edit_callback_message(
     parse_mode: Optional[Union[str, ParseMode]] = ParseMode.HTML,
 ) -> None:
     """Редактирует сообщение с кнопкой; при недоступном сообщении шлёт новое в чат."""
+    safe_text = _sanitize(text)
     msg = callback.message
     if isinstance(msg, Message) and msg.chat is not None:
         try:
             await msg.edit_text(
-                text,
+                safe_text,
                 reply_markup=reply_markup,
                 parse_mode=parse_mode,
             )
@@ -39,7 +51,7 @@ async def edit_callback_message(
         try:
             await callback.bot.send_message(
                 callback.from_user.id,
-                text,
+                safe_text,
                 reply_markup=reply_markup,
                 parse_mode=parse_mode,
             )
