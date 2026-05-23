@@ -177,11 +177,11 @@ async def get_subscription(token: str) -> Response:
     if not sub.vless_link:
         raise HTTPException(status_code=404, detail="Config not generated")
 
-    # Имя сервера берётся из конфига (задаётся через SERVER_1_NAME в .env)
+    # Принудительно подставляем имя сервера как фрагмент (#) VLESS-ссылки.
+    # Срезаем существующий фрагмент (если есть) и всегда добавляем display_name.
+    # Это исключает ситуацию когда Hiddify показывает сырой IP вместо красивого названия.
     server_display_name = config.primary_server.display_name
-    vless_link = sub.vless_link
-    if "#" in vless_link:
-        vless_link = vless_link.split("#", 1)[0] + "#" + server_display_name
+    vless_link = sub.vless_link.split("#", 1)[0] + "#" + server_display_name
 
     content = vless_link + "\n"
     encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
