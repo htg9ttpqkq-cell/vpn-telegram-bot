@@ -123,10 +123,14 @@ async def get_subscription(token: str) -> Response:
         "profile-title": "EDELIA | VPN",
         "Content-Disposition": 'attachment; filename="EDELIA | VPN"; filename*=utf-8\'\'EDELIA%20%7C%20VPN',
         "profile-update-interval": "24",
+        # Всегда передаём заголовок, чтобы Hiddify мерял пинг через VLESS, а не через наш порт 8000.
+        # expire=0 означает «неограниченно»; если есть реальный срок — подставляем его.
+        "subscription-userinfo": (
+            f"upload=0; download=0; total=0; expire={int(sub.expires_at.timestamp())}"
+            if sub.expires_at
+            else "upload=0; download=0; total=0; expire=0"
+        ),
     }
-    if sub.expires_at:
-        # Добавляем стандартный заголовок с информацией о лимитах и сроке для отображения в клиентах
-        headers["Subscription-Userinfo"] = f"upload=0; download=0; total=0; expire={int(sub.expires_at.timestamp())}"
 
     return Response(
         content=encoded_content,
