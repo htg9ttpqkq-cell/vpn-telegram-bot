@@ -193,13 +193,11 @@ async def get_subscription(token: str) -> Response:
             "filename*=utf-8''EDELIA%20%7C%20VPN"
         ),
         "profile-update-interval": "24",
-        # Передаём всегда — чтобы Hiddify мерял пинг до VLESS, не до нашего порта 8000.
-        # expire=0 = «без ограничений»; при наличии реального срока — подставляем его.
-        "subscription-userinfo": (
-            f"upload=0; download=0; total=0; expire={int(sub.expires_at.timestamp())}"
-            if sub.expires_at
-            else "upload=0; download=0; total=0; expire=0"
-        ),
+        # subscription-userinfo с expire=0 говорит Hiddify: не замеряй пинг до нашего
+        # веб-сервера, измеряй напрямую до VPN-прокси. Без этого Hiddify показывает
+        # 600+ мс (время ответа Python-скрипта) вместо реального пинга до VLESS-сервера.
+        # Реальный срок подписки контролируется через is_active/expires_at выше, а не здесь.
+        "subscription-userinfo": "upload=0; download=0; total=0; expire=0",
     }
 
     return Response(
