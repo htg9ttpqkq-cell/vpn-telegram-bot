@@ -282,6 +282,7 @@ async def msg_install(message: Message, db: Database) -> None:
     await message.answer(
         t(lang, "install_title"),
         reply_markup=_install_apps_keyboard(lang),
+        parse_mode="HTML",
     )
 
 
@@ -343,6 +344,7 @@ async def msg_tariffs(message: Message, db: Database) -> None:
     await message.answer(
         t(lang, "choose_plan"),
         reply_markup=builder.as_markup(),
+        parse_mode="HTML",
     )
 
 
@@ -407,6 +409,7 @@ async def msg_english(message: Message, db: Database) -> None:
     await message.answer(
         _dashboard_text(subscription, "en"),
         reply_markup=main_menu_keyboard("en"),
+        parse_mode="HTML",
     )
 
 
@@ -420,6 +423,7 @@ async def msg_russian(message: Message, db: Database) -> None:
     await message.answer(
         _dashboard_text(subscription, "ru"),
         reply_markup=main_menu_keyboard("ru"),
+        parse_mode="HTML",
     )
 
 

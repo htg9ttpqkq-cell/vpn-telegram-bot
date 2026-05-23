@@ -17,7 +17,7 @@ async def edit_callback_message(
     text: str,
     *,
     reply_markup: Optional[InlineKeyboardMarkup] = None,
-    parse_mode: Optional[Union[str, ParseMode]] = None,
+    parse_mode: Optional[Union[str, ParseMode]] = ParseMode.HTML,
 ) -> None:
     """Редактирует сообщение с кнопкой; при недоступном сообщении шлёт новое в чат."""
     msg = callback.message
