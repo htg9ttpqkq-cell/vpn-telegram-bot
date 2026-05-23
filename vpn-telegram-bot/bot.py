@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import uvicorn
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -50,9 +51,23 @@ async def main() -> None:
     dp.callback_query.middleware(rate_limit)
 
     log = logging.getLogger(__name__)
+    
+    # Конфигурация веб-сервера Uvicorn
+    config_uvicorn = uvicorn.Config(
+        "web.webhook:app",
+        host="0.0.0.0",
+        port=8000,
+        log_level="info",
+    )
+    server = uvicorn.Server(config_uvicorn)
+
     try:
         await bot.delete_webhook(drop_pending_updates=True)
-        await dp.start_polling(bot)
+        log.info("Starting bot polling and FastAPI web server concurrently...")
+        await asyncio.gather(
+            dp.start_polling(bot),
+            server.serve()
+        )
     except TelegramNetworkError as exc:
         log.error(
             "Telegram API request failed (network/timeout): %s. "
