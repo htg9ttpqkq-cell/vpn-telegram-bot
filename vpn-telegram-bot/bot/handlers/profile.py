@@ -194,7 +194,7 @@ async def get_config(callback: CallbackQuery, db: Database, config: Config) -> N
 
     vless_link = subscription.vless_link or ""
     if "#" in vless_link:
-        vless_link = vless_link.split("#", 1)[0] + "#EDELIA | Germany"
+        vless_link = vless_link.split("#", 1)[0] + "#🇩🇪 EDELIA | Germany"
     sub_url = f"{config.subscription_config_base_url}/sub/{subscription.sub_token}"
 
     if lang == "ru":

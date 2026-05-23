@@ -114,7 +114,7 @@ async def get_subscription(token: str) -> Response:
 
     vless_link = sub.vless_link
     if "#" in vless_link:
-        vless_link = vless_link.split("#", 1)[0] + "#EDELIA | Germany"
+        vless_link = vless_link.split("#", 1)[0] + "#🇩🇪 EDELIA | Germany"
 
     content = vless_link + "\n"
     encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
