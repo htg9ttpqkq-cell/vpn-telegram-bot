@@ -219,7 +219,8 @@ async def get_subscription(token: str) -> Response:
     # Принудительно подставляем имя сервера как фрагмент (#) VLESS-ссылки.
     # Срезаем существующий фрагмент (если есть) и всегда добавляем display_name.
     # Это исключает ситуацию когда Hiddify показывает сырой IP вместо красивого названия.
-    server_display_name = config.primary_server.display_name
+    import urllib.parse
+    server_display_name = urllib.parse.quote(config.primary_server.display_name)
     vless_link = sub.vless_link.split("#", 1)[0] + "#" + server_display_name
 
     content = vless_link + "\n"
