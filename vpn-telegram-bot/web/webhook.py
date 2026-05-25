@@ -174,6 +174,45 @@ async def get_subscription(token: str) -> Response:
         )
         raise HTTPException(status_code=403, detail="Subscription expired")
 
+    # ── Автообновление конфигурации (если изменился шаблон в .env) ───────────
+    from services.vpn_provision import needs_config_refresh, generate_vless_link
+    if needs_config_refresh(sub, config):
+        logger.info("Sub token %s: configuration refresh needed", token)
+        import secrets
+        import uuid
+        client_uuid = sub.client_uuid or str(uuid.uuid4())
+        sub_token = sub.sub_token or secrets.token_urlsafe(16)
+
+        vless_link = generate_vless_link(config.vless_template, client_uuid)
+        db.set_subscription(
+            user_id=sub.user_id,
+            plan=sub.plan or "trial",
+            expires_at=sub.expires_at,
+            is_active=sub.is_active,
+            vless_link=vless_link,
+            sub_token=sub_token,
+            client_uuid=client_uuid,
+        )
+        sub.vless_link = vless_link
+        sub.client_uuid = client_uuid
+        sub.sub_token = sub_token
+
+        # Синхронизируем новые параметры с 3X-UI панелью
+        if sub.is_active:
+            try:
+                from services.xui_service import ThreeXUIService
+                xui = ThreeXUIService(
+                    xui_url=config.xui_url,
+                    username=config.xui_username,
+                    password=config.xui_password,
+                    inbound_id=config.xui_inbound_id,
+                )
+                email = f"id_{sub.user_id}"
+                await xui.sync_client(client_uuid, email, sub_token, sub.expires_at)
+                logger.info("Sub token %s: synced new config to 3X-UI", token)
+            except Exception as exc:
+                logger.exception("Failed to sync updated client %d to 3X-UI: %s", sub.user_id, exc)
+
     if not sub.vless_link:
         raise HTTPException(status_code=404, detail="Config not generated")
 
