@@ -215,7 +215,7 @@ def _read_servers(
         servers.append(
             ServerConfig(
                 code=_strip(getenv("SERVER_CODE")) or "XX",
-                display_name=_strip(getenv("SERVER_NAME")) or "VPN Server",
+                display_name=_strip(getenv("SERVER_NAME")) or "EDELIA | Premium",
                 xui_url=(_strip(getenv("XUI_URL")) or "http://127.0.0.1:2096").rstrip("/"),
                 xui_username=_strip(getenv("XUI_USERNAME")),
                 xui_password=_strip(getenv("XUI_PASSWORD")),
