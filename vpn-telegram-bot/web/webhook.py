@@ -1,8 +1,7 @@
-"""FastAPI веб-приложение: эндпоинты для вебхуков ЮKassa и выдачи подписок.
+"""FastAPI веб-приложение: Platega.io webhook и выдача VPN-конфигов.
 
-Ключевые изменения:
-  - YooKassa webhook: защита от Double-Spending через claim_yookassa_payment_atomic.
-    Параллельные вебхуки от ЮKassa с одним payment_id обрабатываются только один раз.
+  - Platega.io webhook: защита от Double-Spending через claim_platega_payment_atomic.
+    Верификация через back-channel GET /transaction/{id} к Platega API.
   - /sub/{token}: жёсткая проверка статуса на уровне FastAPI.
     Если подписка просрочена или деактивирована — 403 без конфига, даже если
     на панели 3X-UI клиент технически ещё не отключён (защита от утечки трафика).
@@ -11,14 +10,14 @@
 import base64
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from fastapi import FastAPI, Header, HTTPException, Request, Response
 
 from core.config import load_config
 from core.database import Database
 from services.subscription_service import SubscriptionService
-from services.yookassa_service import YooKassaError, YooKassaService
+from services.platega_service import PlategaError, PlategaService
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,107 +30,103 @@ config = load_config()
 db = Database(config.db_path)
 db.init()
 
-yookassa: Optional[YooKassaService] = None
-if config.yookassa_enabled:
-    yookassa = YooKassaService(
-        shop_id=config.yookassa_shop_id,
-        secret_key=config.yookassa_secret_key,
-        return_url=config.yookassa_return_url,
-    )
-    logger.info("YooKassa webhook: enabled")
-else:
-    logger.info("YooKassa webhook: disabled (missing shop id or secret key)")
+platega = PlategaService(
+    merchant_id=config.platega_merchant_id,
+    secret_key=config.platega_secret_key,
+    return_url=config.platega_return_url,
+)
+logger.info("Platega webhook: enabled (merchant_id=%s)", config.platega_merchant_id)
 
 subscriptions = SubscriptionService(db, config)
 
 
-def _validate_webhook_secret(token: str) -> None:
-    if not config.yookassa_webhook_secret:
-        return
-    if token != config.yookassa_webhook_secret:
+# ── Platega.io Webhook ────────────────────────────────────────────────────────
+
+@app.post("/webhook/platega")
+async def platega_webhook(
+    request: Request,
+    x_merchant_id: str = Header(default="", alias="X-MerchantId"),
+    x_secret: str = Header(default="", alias="X-Secret"),
+) -> Dict[str, Any]:
+    """Принимает колбэки от Platega.io о статусах транзакций.
+
+    Безопасность:
+    - Проверяем X-MerchantId и X-Secret из заголовков.
+    - Атомарный захват транзакции (защита от Double-Spending).
+    - Back-channel верификация через GET /transaction/{id}.
+    """
+    # Верифицируем подпись через заголовки
+    if x_merchant_id != config.platega_merchant_id or x_secret != config.platega_secret_key:
+        logger.warning(
+            "Platega webhook: invalid credentials (merchant_id=%r)", x_merchant_id
+        )
         raise HTTPException(status_code=403, detail="Forbidden")
 
-
-# ── YooKassa Webhook ──────────────────────────────────────────────────────────
-
-@app.post("/webhook/yookassa")
-async def yookassa_webhook(
-    request: Request,
-    x_webhook_secret: str = Header(default="", alias="X-Webhook-Secret"),
-) -> Dict[str, Any]:
-    if not config.yookassa_enabled or yookassa is None:
-        raise HTTPException(status_code=503, detail="YooKassa is not configured")
-
-    _validate_webhook_secret(x_webhook_secret)
-
     payload = await request.json()
-    event = payload.get("event")
-    payment_object = payload.get("object", {})
-    payment_id = payment_object.get("id")
-    status = payment_object.get("status")
+    # Platega sends {"transactionId": "...", "status": "..."}
+    transaction_id = str(payload.get("transactionId") or payload.get("id", ""))
+    status = str(payload.get("status", "")).upper()
 
-    if not payment_id:
-        raise HTTPException(status_code=400, detail="payment id required")
+    if not transaction_id:
+        raise HTTPException(status_code=400, detail="transaction id required")
 
-    # Обновляем сырой статус в БД (всегда, даже для не-succeeded событий)
-    db.update_payment_status(payment_id, status or "unknown")
+    logger.info("Platega webhook: transaction_id=%s status=%s", transaction_id, status)
 
-    if event != "payment.succeeded" or status != "succeeded":
-        return {"ok": True, "processed": False}
+    # Обрабатываем только успешные транзакции
+    if status not in ("SUCCESS", "PAID", "COMPLETED", "CONFIRMED"):
+        return {"ok": True, "processed": False, "status": status}
 
-    # ── Защита от Double-Spending (Race Condition) ────────────────────────────
-    # claim_yookassa_payment_atomic использует BEGIN IMMEDIATE + UPDATE WHERE
-    # status NOT IN ('paid', 'processing'). Параллельные вебхуки с одним
-    # payment_id получат rowcount=0 и уйдут на idempotent-ответ.
-    claimed = db.claim_yookassa_payment_atomic(payment_id)
+    # ── Защита от Double-Spending ─────────────────────────────────────────────
+    claimed = db.claim_platega_payment_atomic(transaction_id)
     if not claimed:
-        # Платёж уже обрабатывается или обработан — идемпотентный ответ
-        existing = db.get_payment_by_yookassa_id(payment_id)
+        existing = db.get_payment_by_platega_id(transaction_id)
         if existing and existing.status == "paid":
-            logger.info("YooKassa payment %s already paid — idempotent skip", payment_id)
+            logger.info("Platega payment %s already paid — idempotent skip", transaction_id)
             return {"ok": True, "processed": True, "idempotent": True}
-        # Ещё в обработке (processing) — вернём 200 чтобы ЮKassa не ретраила
-        logger.warning("YooKassa payment %s is already being processed — skipping", payment_id)
+        logger.warning("Platega payment %s is already being processed — skipping", transaction_id)
         return {"ok": True, "processed": False, "reason": "already_processing"}
 
-    # ── Верификация платежа через API ЮKassa ──────────────────────────────────
+    # ── Back-channel верификация ──────────────────────────────────────────────
     try:
-        verified = await yookassa.get_payment(payment_id)
-    except YooKassaError as exc:
-        # Откатываем claim обратно в pending чтобы вебхук мог быть обработан повторно
-        db.update_payment_status(payment_id, "pending")
-        logger.exception("Failed to verify YooKassa payment %s", payment_id)
+        verified = await platega.get_payment(transaction_id)
+    except PlategaError as exc:
+        db.update_payment_status_by_platega_id(transaction_id, "pending")
+        logger.exception("Failed to verify Platega payment %s", transaction_id)
         raise HTTPException(status_code=502, detail=str(exc))
 
-    if verified.get("status") != "succeeded":
-        db.update_payment_status(payment_id, status or "unknown")
+    verified_status = str(verified.get("status", "")).upper()
+    if verified_status not in ("SUCCESS", "PAID", "COMPLETED", "CONFIRMED"):
+        db.update_payment_status_by_platega_id(transaction_id, verified_status.lower())
         raise HTTPException(status_code=409, detail="payment is not succeeded")
 
-    metadata = verified.get("metadata", {})
+    # Читаем user_id и plan из payload транзакции
+    raw_payload = str(verified.get("payload", ""))
     try:
-        user_id = int(metadata.get("user_id", "0"))
-        plan = str(metadata.get("plan", ""))
-    except (ValueError, TypeError):
-        db.update_payment_status(payment_id, "invalid_metadata")
-        raise HTTPException(status_code=400, detail="invalid metadata")
+        # payload format: "user_id:{user_id};plan:{plan}"
+        parts = dict(p.split(":", 1) for p in raw_payload.split(";") if ":" in p)
+        user_id = int(parts["user_id"])
+        plan = parts["plan"]
+    except Exception:
+        db.update_payment_status_by_platega_id(transaction_id, "invalid_metadata")
+        logger.error("Platega webhook: bad payload %r", raw_payload)
+        raise HTTPException(status_code=400, detail="invalid payload format")
 
     if user_id <= 0 or not plan:
-        db.update_payment_status(payment_id, "invalid_metadata")
+        db.update_payment_status_by_platega_id(transaction_id, "invalid_metadata")
         raise HTTPException(status_code=400, detail="incomplete metadata")
 
     # ── Активация подписки ────────────────────────────────────────────────────
     try:
         activation = await subscriptions.activate_from_payment(user_id, plan)
-        db.update_payment_status(payment_id, "paid")
+        db.update_payment_status_by_platega_id(transaction_id, "paid")
         await subscriptions.notify_user_about_activation(user_id, activation)
-        logger.info("YooKassa payment %s completed for user %d", payment_id, user_id)
+        logger.info("Platega payment %s completed for user %d", transaction_id, user_id)
         return {"ok": True, "processed": True}
     except Exception as exc:
-        # Откатываем в pending_review — администратор увидит и сможет подтвердить вручную
-        db.update_payment_status(payment_id, "pending_review")
+        db.update_payment_status_by_platega_id(transaction_id, "pending_review")
         logger.exception(
-            "Failed to activate subscription for YooKassa payment %s (user %d)",
-            payment_id, user_id,
+            "Failed to activate subscription for Platega payment %s (user %d)",
+            transaction_id, user_id,
         )
         raise HTTPException(status_code=500, detail=f"Activation failed: {exc}")
 
@@ -218,13 +213,40 @@ async def get_subscription(token: str) -> Response:
 
     # Принудительно подставляем имя сервера как фрагмент (#) VLESS-ссылки.
     # Срезаем существующий фрагмент (если есть) и всегда добавляем display_name.
-    # Это исключает ситуацию когда Hiddify показывает сырой IP вместо красивого названия.
     import urllib.parse
     server_display_name = urllib.parse.quote(config.primary_server.display_name)
     vless_link = sub.vless_link.split("#", 1)[0] + "#" + server_display_name
 
     content = vless_link + "\n"
     encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
+
+    # ── Получение статистики использования трафика (3X-UI) ───────────────────
+    upload = 0
+    download = 0
+    total = 0
+    expire = 0
+    if sub.expires_at:
+        expire = int(sub.expires_at.timestamp())
+
+    try:
+        from services.xui_service import ThreeXUIService
+        xui = ThreeXUIService(
+            xui_url=config.xui_url,
+            username=config.xui_username,
+            password=config.xui_password,
+            inbound_id=config.xui_inbound_id,
+        )
+        email = f"id_{sub.user_id}"
+        traffic = await xui.get_client_traffic(email)
+        if traffic:
+            upload = traffic.get("up", 0)
+            download = traffic.get("down", 0)
+            total = traffic.get("total", 0)
+    except Exception as exc:
+        logger.warning(
+            "Failed to fetch traffic stats for client %d: %s",
+            sub.user_id, exc
+        )
 
     headers = {
         "profile-title": "EDELIA | VPN",
@@ -233,11 +255,7 @@ async def get_subscription(token: str) -> Response:
             "filename*=utf-8''EDELIA%20%7C%20VPN"
         ),
         "profile-update-interval": "24",
-        # subscription-userinfo с expire=0 говорит Hiddify: не замеряй пинг до нашего
-        # веб-сервера, измеряй напрямую до VPN-прокси. Без этого Hiddify показывает
-        # 600+ мс (время ответа Python-скрипта) вместо реального пинга до VLESS-сервера.
-        # Реальный срок подписки контролируется через is_active/expires_at выше, а не здесь.
-        "subscription-userinfo": "upload=0; download=0; total=0; expire=0",
+        "subscription-userinfo": f"upload={upload}; download={download}; total={total}; expire={expire}",
     }
 
     return Response(

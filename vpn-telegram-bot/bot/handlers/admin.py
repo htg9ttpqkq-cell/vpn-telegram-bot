@@ -13,7 +13,6 @@ from .callback_tools import edit_callback_message
 from core.config import Config
 from core.database import Database
 from services.subscription_service import SubscriptionService
-from services.payment_service import PaymentService
 from services.vpn_provision import vless_config_link
 
 router = Router()
@@ -148,58 +147,6 @@ async def admin_actions(
 
     await callback.answer("Неизвестное действие", show_alert=True)
 
-
-@router.callback_query(F.data.startswith("adminpay:"))
-async def admin_payment_actions(
-    callback: CallbackQuery,
-    db: Database,
-    config: Config,
-) -> None:
-    if callback.from_user is None or not _is_admin(callback.from_user.id, config):
-        await callback.answer("Нет доступа", show_alert=True)
-        return
-
-    _, action, raw_payment_id = callback.data.split(":", maxsplit=2)
-    if not raw_payment_id.isdigit():
-        await callback.answer("Некорректный ID", show_alert=True)
-        return
-    payment_id = int(raw_payment_id)
-    payment = db.get_payment_by_id(payment_id)
-    if payment is None:
-        await callback.answer("Платеж не найден", show_alert=True)
-        return
-    if payment.status != "pending_review":
-        await callback.answer("Уже обработан", show_alert=True)
-        return
-
-    if action == "reject":
-        payment_service = PaymentService(db, config)
-        payment_service.reject_payment(payment_id)
-        await callback.bot.send_message(
-            payment.user_id,
-            "Платеж отклонен. Проверьте перевод и попробуйте снова.",
-        )
-        await edit_callback_message(
-            callback,
-            f"Payment #{payment_id} отклонен.",
-            reply_markup=admin_keyboard(),
-        )
-        await callback.answer("Rejected")
-        return
-
-    if action == "confirm":
-        payment_service = PaymentService(db, config)
-        activation = await payment_service.confirm_payment(payment_id)
-        await payment_service.notify_user_about_activation(payment.user_id, activation)
-        await edit_callback_message(
-            callback,
-            f"Payment #{payment_id} подтвержден, подписка активирована.",
-            reply_markup=admin_keyboard(),
-        )
-        await callback.answer("Confirmed")
-        return
-
-    await callback.answer("Неизвестное действие", show_alert=True)
 
 
 @router.message(AdminStates.waiting_activate_user_id)

@@ -139,6 +139,28 @@ def _read_yookassa() -> _YookassaSettings:
     return _YookassaSettings(True, shop_id, secret_key, return_url, webhook_secret)
 
 
+class _PlategaSettings(NamedTuple):
+    enabled: bool
+    merchant_id: str
+    secret_key: str
+    return_url: str
+
+
+def _read_platega() -> _PlategaSettings:
+    """Platega.io включена только если PLATEGA_ENABLED=True."""
+    enabled_str = _strip(getenv("PLATEGA_ENABLED")).lower()
+    merchant_id = _strip(getenv("PLATEGA_MERCHANT_ID"))
+    secret_key = _strip(getenv("PLATEGA_SECRET_KEY"))
+    return_url = _strip(getenv("PLATEGA_RETURN_URL")) or "https://t.me"
+
+    enabled = enabled_str in ("1", "true", "yes", "on")
+    if enabled and (not merchant_id or not secret_key):
+        raise ValueError(
+            "PLATEGA_ENABLED задан как True, но отсутствует PLATEGA_MERCHANT_ID или PLATEGA_SECRET_KEY."
+        )
+    return _PlategaSettings(enabled, merchant_id, secret_key, return_url)
+
+
 # ── Multi-server configuration ────────────────────────────────────────────────
 
 @dataclass(frozen=True)
@@ -258,6 +280,10 @@ class Config:
     yookassa_secret_key: str
     yookassa_return_url: str
     yookassa_webhook_secret: str
+    platega_enabled: bool
+    platega_merchant_id: str
+    platega_secret_key: str
+    platega_return_url: str
     sbp_recipient: str
     sbp_phone_or_card: str
     delete_user_menu_message_after_sec: int
@@ -304,6 +330,7 @@ class Config:
         support_raw = _strip(getenv("SUPPORT_TEXT"))
         support_text = support_raw or "Напишите в поддержку: @vpn_support"
         yk = _read_yookassa()
+        pl = _read_platega()
         sbp_recipient = _strip(getenv("SBP_RECIPIENT")) or "Котельников Д.А."
         sbp_raw = _strip(getenv("SBP_PHONE_OR_CARD"))
         sbp_phone_or_card = sbp_raw or "+7 933-273-72-87"
@@ -346,6 +373,10 @@ class Config:
             yookassa_secret_key=yk.secret_key,
             yookassa_return_url=yk.return_url,
             yookassa_webhook_secret=yk.webhook_secret,
+            platega_enabled=pl.enabled,
+            platega_merchant_id=pl.merchant_id,
+            platega_secret_key=pl.secret_key,
+            platega_return_url=pl.return_url,
             sbp_recipient=sbp_recipient,
             sbp_phone_or_card=sbp_phone_or_card,
             delete_user_menu_message_after_sec=delete_user_menu_message_after_sec,
@@ -359,12 +390,14 @@ class Config:
 
 PLANS: Final[dict[str, int]] = {
     "trial": 7,
+    "test": 1,
     "1m": 30,
     "3m": 90,
     "12m": 365,
 }
 
 PLAN_PRICES_RUB: Final[dict[str, int]] = {
+    "test": 1,
     "1m": 149,
     "3m": 349,
     "12m": 1199,

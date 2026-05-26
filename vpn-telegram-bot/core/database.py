@@ -35,7 +35,8 @@ class PaymentRecord:
     plan: str
     amount: int
     status: str
-    yookassa_payment_id: str
+    yookassa_payment_id: Optional[str]
+    platega_transaction_id: Optional[str]
     comment: Optional[str]
 
 
@@ -194,6 +195,8 @@ class Database:
         }
         if "comment" not in payment_columns:
             conn.execute("ALTER TABLE payments ADD COLUMN comment TEXT")
+        if "platega_transaction_id" not in payment_columns:
+            conn.execute("ALTER TABLE payments ADD COLUMN platega_transaction_id TEXT")
 
     # ── Users ─────────────────────────────────────────────────────────────────
 
@@ -469,8 +472,9 @@ class Database:
         plan: str,
         amount: int,
         status: str,
-        yookassa_payment_id: Optional[str],
-        idempotency_key: Optional[str],
+        yookassa_payment_id: Optional[str] = None,
+        platega_transaction_id: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
         comment: Optional[str] = None,
     ) -> int:
         now = datetime.now(timezone.utc).isoformat()
@@ -479,9 +483,9 @@ class Database:
                 """
                 INSERT INTO payments (
                     user_id, plan, amount, status, yookassa_payment_id,
-                    idempotency_key, comment, created_at, updated_at
+                    platega_transaction_id, idempotency_key, comment, created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(yookassa_payment_id) DO UPDATE SET
                     status     = excluded.status,
                     comment    = excluded.comment,
@@ -489,7 +493,7 @@ class Database:
                 """,
                 (
                     user_id, plan, amount, status,
-                    yookassa_payment_id, idempotency_key, comment, now, now,
+                    yookassa_payment_id, platega_transaction_id, idempotency_key, comment, now, now,
                 ),
             )
             return int(cursor.lastrowid)
@@ -528,11 +532,27 @@ class Database:
             )
             return cursor.rowcount == 1
 
+    def claim_platega_payment_atomic(self, platega_transaction_id: str) -> bool:
+        """Аналог claim_yookassa_payment_atomic для Platega-вебхуков.
+
+        Защита от повторной обработки одного и того же transaction_id.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        with self._lock, self._transact() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE payments SET status = 'processing', updated_at = ?
+                WHERE platega_transaction_id = ? AND status NOT IN ('paid', 'processing')
+                """,
+                (now, platega_transaction_id),
+            )
+            return cursor.rowcount == 1
+
     def get_payment_by_yookassa_id(self, yookassa_payment_id: str) -> Optional[PaymentRecord]:
         with self._lock, self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT id, user_id, plan, amount, status, yookassa_payment_id, comment
+                SELECT id, user_id, plan, amount, status, yookassa_payment_id, platega_transaction_id, comment
                 FROM payments WHERE yookassa_payment_id = ?
                 """,
                 (yookassa_payment_id,),
@@ -546,6 +566,29 @@ class Database:
             amount=row["amount"],
             status=row["status"],
             yookassa_payment_id=row["yookassa_payment_id"],
+            platega_transaction_id=row["platega_transaction_id"],
+            comment=row["comment"],
+        )
+
+    def get_payment_by_platega_id(self, platega_transaction_id: str) -> Optional[PaymentRecord]:
+        with self._lock, self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT id, user_id, plan, amount, status, yookassa_payment_id, platega_transaction_id, comment
+                FROM payments WHERE platega_transaction_id = ?
+                """,
+                (platega_transaction_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return PaymentRecord(
+            id=row["id"],
+            user_id=row["user_id"],
+            plan=row["plan"],
+            amount=row["amount"],
+            status=row["status"],
+            yookassa_payment_id=row["yookassa_payment_id"],
+            platega_transaction_id=row["platega_transaction_id"],
             comment=row["comment"],
         )
 
@@ -553,7 +596,7 @@ class Database:
         with self._lock, self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT id, user_id, plan, amount, status, yookassa_payment_id, comment
+                SELECT id, user_id, plan, amount, status, yookassa_payment_id, platega_transaction_id, comment
                 FROM payments WHERE id = ?
                 """,
                 (payment_id,),
@@ -567,6 +610,7 @@ class Database:
             amount=row["amount"],
             status=row["status"],
             yookassa_payment_id=row["yookassa_payment_id"],
+            platega_transaction_id=row["platega_transaction_id"],
             comment=row["comment"],
         )
 
@@ -576,6 +620,14 @@ class Database:
             conn.execute(
                 "UPDATE payments SET status = ?, updated_at = ? WHERE yookassa_payment_id = ?",
                 (status, now, yookassa_payment_id),
+            )
+
+    def update_payment_status_by_platega_id(self, platega_transaction_id: str, status: str) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        with self._lock, self._connect() as conn:
+            conn.execute(
+                "UPDATE payments SET status = ?, updated_at = ? WHERE platega_transaction_id = ?",
+                (status, now, platega_transaction_id),
             )
 
     def update_payment_status_by_id(self, payment_id: int, status: str) -> None:
@@ -590,7 +642,7 @@ class Database:
         with self._lock, self._connect() as conn:
             rows = conn.execute(
                 """
-                SELECT id, user_id, plan, amount, status, yookassa_payment_id, comment
+                SELECT id, user_id, plan, amount, status, yookassa_payment_id, platega_transaction_id, comment
                 FROM payments WHERE status = 'pending_review'
                 ORDER BY created_at ASC LIMIT ?
                 """,
@@ -600,7 +652,7 @@ class Database:
             PaymentRecord(
                 id=r["id"], user_id=r["user_id"], plan=r["plan"], amount=r["amount"],
                 status=r["status"], yookassa_payment_id=r["yookassa_payment_id"],
-                comment=r["comment"],
+                platega_transaction_id=r["platega_transaction_id"], comment=r["comment"],
             )
             for r in rows
         ]

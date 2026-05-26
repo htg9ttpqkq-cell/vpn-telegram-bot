@@ -325,3 +325,26 @@ class ThreeXUIService:
         async with httpx.AsyncClient(timeout=15.0) as http:
             await self._login(http)
             await self._try_delete_by_email(http, email)
+
+    async def get_client_traffic(self, email: str) -> Optional[dict]:
+        """Возвращает статистику трафика клиента по его email."""
+        if not self.username or not self.password:
+            return None
+
+        email = email.lower().strip()
+        url = f"{self.xui_url}/panel/api/clients/traffic/{email}"
+        async with httpx.AsyncClient(timeout=10.0) as http:
+            try:
+                await self._login(http)
+                resp = await http.get(url)
+                resp.raise_for_status()
+                data = resp.json()
+                if data.get("success") and data.get("obj"):
+                    return data["obj"]
+            except Exception as exc:
+                logger.warning(
+                    "[%s] Failed to get traffic for client %s: %s",
+                    self.display_name, email, exc,
+                )
+        return None
+
