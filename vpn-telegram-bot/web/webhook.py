@@ -249,7 +249,7 @@ async def get_subscription(token: str) -> Response:
         )
 
     headers = {
-        "profile-title": "EDELIA | VPN",
+        "profile-title": "💎 EDELIA | VPN".encode("utf-8").decode("latin-1"),
         "Content-Disposition": (
             'attachment; filename="EDELIA | VPN"; '
             "filename*=utf-8''EDELIA%20%7C%20VPN"
