@@ -287,7 +287,7 @@ async def msg_install(message: Message, db: Database) -> None:
 
 
 @router.message(F.text.in_(all_locale_values("btn_profile")))
-async def msg_profile(message: Message, db: Database) -> None:
+async def msg_profile(message: Message, db: Database, config: Config) -> None:
     if not message.from_user:
         return
     user_id = message.from_user.id
@@ -311,7 +311,15 @@ async def msg_profile(message: Message, db: Database) -> None:
         if subscription and subscription.expires_at
         else "—"
     )
-    server_name = "—"
+
+    sub_link_str = ""
+    if subscription and subscription.sub_token:
+        sub_url = f"{config.subscription_config_base_url}/sub/{subscription.sub_token}"
+        if lang == "ru":
+            sub_link_str = f"\n\n🔗 <b>Ссылка подписки:</b>\n<code>{sub_url}</code>"
+        else:
+            sub_link_str = f"\n\n🔗 <b>Subscription link:</b>\n<code>{sub_url}</code>"
+
     builder = InlineKeyboardBuilder()
     builder.button(text=t(lang, "btn_renew"), callback_data="buy_subscription")
     builder.button(text=t(lang, "btn_usage"), callback_data="usage")
@@ -322,7 +330,8 @@ async def msg_profile(message: Message, db: Database) -> None:
         f"👤 ID: <code>{user_id}</code>\n"
         f"{t(lang, 'profile_status')}: {status}\n"
         f"{t(lang, 'profile_plan')}: {plan_label}\n"
-        f"{t(lang, 'profile_expiry')}: <code>{end_date}</code>",
+        f"{t(lang, 'profile_expiry')}: <code>{end_date}</code>"
+        f"{sub_link_str}",
         reply_markup=builder.as_markup(),
         parse_mode="HTML",
     )

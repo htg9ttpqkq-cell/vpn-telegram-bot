@@ -25,7 +25,7 @@ def _menu_keyboard(lang: str):
 
 
 @router.callback_query(F.data == "my_subscription")
-async def my_subscription(callback: CallbackQuery, db: Database) -> None:
+async def my_subscription(callback: CallbackQuery, db: Database, config: Config) -> None:
     if callback.from_user is None:
         await callback.answer("User not found", show_alert=True)
         return
@@ -54,6 +54,14 @@ async def my_subscription(callback: CallbackQuery, db: Database) -> None:
         else "—"
     )
 
+    sub_link_str = ""
+    if subscription and subscription.sub_token:
+        sub_url = f"{config.subscription_config_base_url}/sub/{subscription.sub_token}"
+        if lang == "ru":
+            sub_link_str = f"\n\n🔗 <b>Ссылка подписки:</b>\n<code>{sub_url}</code>"
+        else:
+            sub_link_str = f"\n\n🔗 <b>Subscription link:</b>\n<code>{sub_url}</code>"
+
     builder = InlineKeyboardBuilder()
     builder.button(text=t(lang, "btn_renew"), callback_data="buy_subscription")
     builder.button(text=t(lang, "btn_usage"), callback_data="usage")
@@ -63,10 +71,11 @@ async def my_subscription(callback: CallbackQuery, db: Database) -> None:
     await edit_callback_message(
         callback,
         f"{t(lang, 'profile_title')}\n\n"
-        f"\ud83d\udc64 ID: <code>{user_id}</code>\n"
+        f"👤 ID: <code>{user_id}</code>\n"
         f"{t(lang, 'profile_status')}: {status}\n"
         f"{t(lang, 'profile_plan')}: {plan_label}\n"
-        f"{t(lang, 'profile_expiry')}: <code>{end_date}</code>",
+        f"{t(lang, 'profile_expiry')}: <code>{end_date}</code>"
+        f"{sub_link_str}",
         reply_markup=builder.as_markup(),
         parse_mode=ParseMode.HTML,
     )
