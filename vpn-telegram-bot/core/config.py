@@ -390,14 +390,12 @@ class Config:
 
 PLANS: Final[dict[str, int]] = {
     "trial": 7,
-    "test": 1,
     "1m": 30,
     "3m": 90,
     "12m": 365,
 }
 
 PLAN_PRICES_RUB: Final[dict[str, int]] = {
-    "test": 1,
     "1m": 149,
     "3m": 349,
     "12m": 1199,

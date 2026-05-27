@@ -256,14 +256,12 @@ texts = {
 _plan_period_labels = {
     "ru": {
         "trial": "Пробный доступ — 7 дней",
-        "test": "Тестовый доступ — 1 день (1 ₽)",
         "1m": "Premium Доступ — 1 месяц",
         "3m": "Premium Доступ — 3 месяца",
         "12m": "Premium Доступ — 12 месяцев",
     },
     "en": {
         "trial": "Trial Access — 7 days",
-        "test": "Test Access — 1 day (1 RUB)",
         "1m": "Premium Access — 1 month",
         "3m": "Premium Access — 3 months",
         "12m": "Premium Access — 12 months",
