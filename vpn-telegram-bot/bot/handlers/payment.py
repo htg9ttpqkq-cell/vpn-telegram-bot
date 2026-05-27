@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -54,6 +55,49 @@ async def handle_plan_selection(
     lang = UserService(db).get_language(callback.from_user.id)
 
     plan_code = callback.data.split(":", maxsplit=1)[1]
+    if plan_code == "trial":
+        user_id = callback.from_user.id
+        subscription = db.get_subscription(user_id)
+        now = datetime.now(timezone.utc)
+        if subscription and subscription.is_active and subscription.expires_at and subscription.expires_at > now:
+            await callback.answer(
+                "У вас уже есть активная подписка." if lang == "ru" else "You already have an active subscription.",
+                show_alert=True,
+            )
+            return
+
+        if db.user_trial_consumed(user_id):
+            await callback.answer(
+                "Вы уже использовали пробный период." if lang == "ru" else "You have already used the trial period.",
+                show_alert=True,
+            )
+            return
+
+        from services.subscription_service import SubscriptionService
+        sub_svc = SubscriptionService(db, config)
+        granted = await sub_svc.try_grant_welcome_trial(user_id)
+        if granted:
+            builder = InlineKeyboardBuilder()
+            builder.button(text=t(lang, "btn_get_config"), callback_data="get_config")
+            builder.button(text=t(lang, "btn_menu"), callback_data="menu")
+            builder.adjust(1)
+            await edit_callback_message(
+                callback,
+                "💎 <b>Пробный период активирован!</b>\n\n"
+                "Вам предоставлено 7 дней бесплатного премиум-доступа. Нажмите кнопку ниже, чтобы получить ссылку для подключения:"
+                if lang == "ru"
+                else "💎 <b>Trial period activated!</b>\n\n"
+                "You have been granted 7 days of free premium access. Tap the button below to get your connection link:",
+                reply_markup=builder.as_markup(),
+                parse_mode="HTML"
+            )
+        else:
+            await callback.answer(
+                "Не удалось активировать пробный период." if lang == "ru" else "Failed to activate trial period.",
+                show_alert=True,
+            )
+        return
+
     amount = PLAN_PRICES_RUB.get(plan_code)
     if amount is None:
         await callback.answer(t(lang, "unknown_plan"), show_alert=True)
