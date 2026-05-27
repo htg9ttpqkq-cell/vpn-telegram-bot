@@ -266,7 +266,12 @@ class Database:
 
     def _row_to_subscription(self, row: sqlite3.Row) -> UserSubscription:
         raw_expires = row["expires_at"]
-        expires_at = datetime.fromisoformat(raw_expires) if raw_expires else None
+        if raw_expires:
+            expires_at = datetime.fromisoformat(raw_expires)
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+        else:
+            expires_at = None
         keys = row.keys()
         return UserSubscription(
             user_id=row["user_id"],
