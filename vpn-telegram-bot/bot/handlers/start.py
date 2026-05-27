@@ -346,7 +346,14 @@ async def msg_tariffs(message: Message, db: Database) -> None:
     user_svc.get_or_create_user(user_id)
     lang = user_svc.get_language(user_id)
     builder = InlineKeyboardBuilder()
-    for code, label in ui_texts.plan_titles[normalize_lang(lang)].items():
+
+    plans_to_show = []
+    if not db.user_trial_consumed(user_id):
+        plans_to_show.append("trial")
+    plans_to_show.extend(["1m", "3m", "12m"])
+
+    for code in plans_to_show:
+        label = plan_title(lang, code)
         builder.button(text=label, callback_data=f"plan:{code}")
     builder.button(text=t(lang, "btn_menu"), callback_data="menu")
     builder.adjust(1)

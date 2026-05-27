@@ -19,9 +19,14 @@ def _menu_keyboard(lang: str):
     return builder.as_markup()
 
 
-def plan_keyboard(lang: str):
+def plan_keyboard(lang: str, db: Database, user_id: int):
     builder = InlineKeyboardBuilder()
-    for code in ("1m", "3m", "12m"):
+    plans_to_show = []
+    if not db.user_trial_consumed(user_id):
+        plans_to_show.append("trial")
+    plans_to_show.extend(["1m", "3m", "12m"])
+    
+    for code in plans_to_show:
         builder.button(text=plan_title(lang, code), callback_data=f"plan:{code}")
     builder.button(text=t(lang, "btn_menu"), callback_data="menu")
     builder.adjust(1)
@@ -30,15 +35,15 @@ def plan_keyboard(lang: str):
 
 @router.callback_query(F.data == "buy_subscription")
 async def buy_subscription(callback: CallbackQuery, db: Database) -> None:
-    lang = (
-        UserService(db).get_language(callback.from_user.id)
-        if callback.from_user
-        else "ru"
-    )
+    if callback.from_user is None:
+        await callback.answer()
+        return
+    user_id = callback.from_user.id
+    lang = UserService(db).get_language(user_id)
     await edit_callback_message(
         callback,
         t(lang, "choose_plan"),
-        reply_markup=plan_keyboard(lang),
+        reply_markup=plan_keyboard(lang, db, user_id),
     )
     await callback.answer()
 
