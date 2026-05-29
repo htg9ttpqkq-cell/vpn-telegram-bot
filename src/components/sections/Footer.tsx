@@ -51,7 +51,7 @@ export default function Footer() {
             <Link href="#features" className="hover:text-white transition-colors">STATUS</Link>
             <Link href="#hero" className="hover:text-white transition-colors">NETWORK</Link>
             <a 
-              href="https://t.me/AveLxu" 
+              href="https://t.me/edelia_support" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="hover:text-white transition-colors"
